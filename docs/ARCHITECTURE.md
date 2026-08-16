@@ -6,7 +6,7 @@ Every source file has one owner and one responsibility.
 | Location | Responsibility | Must not contain |
 | --- | --- | --- |
 | `source/gray/cli.py` | Parse a command, load configuration, dispatch one configured project stage, save its returned summary. | Model, dataset, loss, metric formulas, training loops. |
-| `source/gray/core/config.py` | Configuration identity, validation and deterministic artifact paths. | Training logic or model metadata. |
+| `source/gray/core/config.py` | One-file Hydra composition, configuration identity, validation and deterministic artifact paths. | Config-group composition, training logic or model metadata. |
 | `source/gray/core/device.py` | Explicit CPU/CUDA device validation. | Seeding, model execution or CUDA memory policy. |
 | `source/gray/core/interfaces.py` | Minimal stable contracts for project code. | Task-specific implementations. |
 | `source/gray/core/provenance.py` | Checkpoint checksum and model identity manifest. | Artifact writing policy or training logic. |
@@ -18,6 +18,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/utils/tta.py` | Selected in-plane inference-time flip and Rotate90 variants. | Model calls, prediction aggregation or training augmentation. |
 | `source/gray/utils/logging.py` | Console/file logger construction. | Metric reporting semantics. |
 | `source/gray/utils/io.py` | Small UTF-8 JSON artifact writes. | Project result schemas or data loading. |
+| `source/gray/optuna/run_optuna.py` | One Optuna study: sample a copied config, call project training, persist trials and render Rich progress. | Model, dataset, loss or project training logic. |
 
 ## Project Boundary
 
@@ -37,6 +38,10 @@ Gray calls the configured function with the resolved configuration. A stage
 returns a dictionary; Gray writes that dictionary to the corresponding
 artifact directory. The project remains responsible for the contents and
 clinical meaning of the result.
+
+For a study, the project train entrypoint may accept an optional
+`trial: optuna.Trial | None` keyword. Gray always uses the same entrypoint; it
+does not invoke an external training subprocess or modify the source YAML.
 
 The package-level `gray.utils` imports are convenience aliases only. The
 implementation remains one capability per module, so both

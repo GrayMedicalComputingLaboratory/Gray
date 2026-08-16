@@ -1,27 +1,28 @@
 """YAML configuration loading with explicit, portable path resolution."""
 from __future__ import annotations
 
-from copy import deepcopy
-import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
-try:
-    import yaml
-except ModuleNotFoundError:  # Minimal template remains runnable before dependency install.
-    yaml = None
+from hydra import compose, initialize_config_dir
+from omegaconf import DictConfig, OmegaConf
 
 
-def load_config(path: str | Path) -> tuple[dict[str, Any], Path]:
-    """Load a mapping config and annotate it with its source directory."""
+def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[str, Any], Path]:
+    """Compose one experiment YAML through Hydra without config-group composition."""
     source = Path(path).expanduser().resolve()
     if not source.is_file():
         raise FileNotFoundError(f"config not found: {source}")
-    with source.open(encoding="utf-8") as handle:
-        config = (yaml.safe_load(handle) if yaml is not None else json.load(handle)) or {}
-    if not isinstance(config, dict):
+    raw = OmegaConf.load(source)
+    if not isinstance(raw, DictConfig):
         raise ValueError("configuration root must be a YAML mapping")
-    result = deepcopy(config)
+    if "defaults" in raw:
+        raise ValueError("Gray accepts one self-contained experiment YAML; Hydra defaults are not supported")
+    with initialize_config_dir(version_base=None, config_dir=str(source.parent)):
+        composed = compose(config_name=source.stem, overrides=list(overrides))
+    result = OmegaConf.to_container(composed, resolve=True, throw_on_missing=True)
+    if not isinstance(result, dict):
+        raise ValueError("configuration root must resolve to a mapping")
     experiment_id = source.stem
     configured = result.get("experiment_id")
     if configured not in (None, experiment_id):

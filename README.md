@@ -25,7 +25,11 @@ configured function with the resolved configuration dictionary.
 
 ```yaml
 # configs/exp_001.yaml
-experiment_id: exp_001
+# The filename, not a YAML field, defines experiment_id: exp_001.
+hydra:
+  job:
+    chdir: false
+
 project:
   output_root: ../../outputs
   entrypoints:
@@ -41,9 +45,12 @@ runtime:
 # my_project/training.py
 from gray.utils import seed_everything
 
-def train(config: dict) -> dict:
+def train(config: dict, trial=None) -> dict:
     seed_everything(config["runtime"]["seed"])
     # Build this project's dataset, model, optimizer and training loop.
+    # Optional per-epoch pruning:
+    # trial.report(valid_f1_macro, epoch)
+    # if trial.should_prune(): raise optuna.TrialPruned()
     return {"experiment_id": config["experiment_id"], "status": "complete"}
 ```
 
@@ -83,6 +90,55 @@ python -m gray.cli analyze --config configs/exp_001.yaml
 If your Python Scripts directory is on `PATH`, `gray train ...` is equivalent.
 When a stage function returns a dictionary, Gray writes it to
 `<output_root>/<experiment_id>/<stage>/summary.json`.
+
+Hydra parses one self-contained YAML only. It does not support `defaults`,
+configuration groups, or automatic working-directory changes. Override a value
+without editing the file:
+
+```bash
+gray train --config configs/exp_001.yaml --override train.lr=0.00003
+```
+
+## Optuna Search
+
+Add an `optuna` section to the same experiment YAML. When `enabled: true`,
+`gray train` automatically runs the study; `gray tune` is an explicit alias.
+
+```yaml
+optuna:
+  enabled: true
+  study_name: exp_001_search
+  direction: maximize
+  objective_key: valid.f1_macro
+  n_trials: 30
+  seed: 42
+  sampler: tpe       # tpe | random
+  pruner: median     # median | none
+  resume: true
+  final_train: true
+
+  search_space:
+    train.lr:
+      type: float
+      low: 0.000001
+      high: 0.0003
+      log: true
+    model.dropout:
+      type: float
+      low: 0.0
+      high: 0.5
+```
+
+The train entrypoint receives a copied, trial-specific configuration. It must
+return the dotted objective key, for example:
+
+```python
+return {"valid": {"f1_macro": best_f1, "roc_auc": best_auc}}
+```
+
+Gray saves the SQLite study, trial configuration snapshots, trial metrics,
+best-parameter YAML and study summary below
+`<output_root>/<experiment_id>/optuna/`. The source YAML is never modified.
 
 ## Metrics
 
