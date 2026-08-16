@@ -36,6 +36,11 @@ returns a dictionary; Gray writes that dictionary to the corresponding
 artifact directory. The project remains responsible for the contents and
 clinical meaning of the result.
 
+The package-level `gray.utils` imports are convenience aliases only. The
+implementation remains one capability per module, so both
+`from gray.utils import seed_everything` and
+`from gray.utils.seed_everything import seed_everything` are valid.
+
 ## Promotion Rule
 
 Do not add a helper to Gray because one project happens to need it. Keep it in

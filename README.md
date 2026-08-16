@@ -15,7 +15,7 @@ python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLa
 For active local framework work:
 
 ```powershell
-python -m pip install -e D:\Desktop\Frameworks\Gray
+python -m pip install -e /path/to/gray
 ```
 
 ## Project Integration
@@ -39,7 +39,7 @@ runtime:
 
 ```python
 # my_project/training.py
-from gray.utils.seed_everything import seed_everything
+from gray.utils import seed_everything
 
 def train(config: dict) -> dict:
     seed_everything(config["runtime"]["seed"])
@@ -53,9 +53,9 @@ For PyTorch DataLoaders, pass `gray.utils.seed_worker.seed_worker` as
 Run each lifecycle stage through Gray:
 
 ```powershell
-python -m gray.cli train --config configs\exp_001.yaml
-python -m gray.cli validate --config configs\exp_001.yaml
-python -m gray.cli analyze --config configs\exp_001.yaml
+python -m gray.cli train --config configs/exp_001.yaml
+python -m gray.cli validate --config configs/exp_001.yaml
+python -m gray.cli analyze --config configs/exp_001.yaml
 ```
 
 If your Python Scripts directory is on `PATH`, `gray train ...` is equivalent.
