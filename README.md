@@ -1,6 +1,6 @@
 # Gray
 
-Gray is the Gray Medical Computing Laboratory computer-vision framework template. It extracts stable engineering patterns from `skin_ai` and `RCM` without changing their model mathematics or moving their code.
+Gray is the Gray Medical Computing Laboratory training-research framework for computer-vision and medical-AI projects.
 
 It provides a training-research lifecycle: preparation interfaces, training, validation, scoring, analysis, experiment traceability, and extension boundaries for classification, detection, segmentation, and medical CV plugins.
 
@@ -15,7 +15,6 @@ tests/        unit tests
 docs/         future plugin documentation
 ```
 
-Read [ARCHITECTURE_ANALYSIS.md](ARCHITECTURE_ANALYSIS.md) before extracting code from a project.
 Read [Commercial Baseline](docs/COMMERCIAL_BASELINE.md) before adapting it for a customer or regulated workflow.
 
 ## Install

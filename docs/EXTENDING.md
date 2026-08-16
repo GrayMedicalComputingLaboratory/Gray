@@ -12,4 +12,4 @@ Create `gray/tasks/<task>/` only alongside a working dataset, trainer, evaluator
 
 ## Add medical imaging
 
-DICOM/NIfTI/WSI/3D adapters should live in a dedicated plugin. Do not place RCM stack masks, skin lesion masks, or patient-level folds in `gray.core`.
+DICOM/NIfTI/WSI/3D adapters should live in a dedicated plugin. Do not place task-specific masks, patient-level split policies, or domain preprocessing rules in `gray.core`.
