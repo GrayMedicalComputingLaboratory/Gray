@@ -11,6 +11,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/core/interfaces.py` | Minimal stable contracts for project code. | Task-specific implementations. |
 | `source/gray/core/provenance.py` | Checkpoint checksum and model identity manifest. | Artifact writing policy or training logic. |
 | `source/gray/metrics/<metric>.py` | One stateless, independently callable metric per file. | File reads, model calls, threshold selection policy. |
+| `source/gray/metrics/clinical_binary_metrics.py` | Compose independently callable clinical binary metrics into one report. | Metric formulas or project-specific clinical policy. |
 | `source/gray/utils/seed_everything.py` | Process-wide Python, NumPy and PyTorch random-state control. | DataLoader worker initialization, logging or IO. |
 | `source/gray/utils/seed_worker.py` | One PyTorch DataLoader worker's random-state control. | Global process seeding or IO. |
 | `source/gray/utils/torch_generator.py` | Seeded PyTorch `Generator` construction. | DataLoader configuration or global seeding. |

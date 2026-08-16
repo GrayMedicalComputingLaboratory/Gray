@@ -108,6 +108,29 @@ metrics = classification_metrics(
 )
 ```
 
+## Clinical Binary Assessment
+
+Use `clinical_binary_metrics` for a two-class clinical report. It provides
+Sensitivity, Specificity, PPV, NPV, ROC-AUC, PR-AUC, reliability-curve data,
+ECE, Brier score, percentile bootstrap confidence intervals, and a threshold
+report with Youden-J and F1 operating points.
+
+```python
+from gray.metrics import clinical_binary_metrics
+
+report = clinical_binary_metrics(
+    targets=["Non-BCC", "BCC", "BCC"],
+    predictions=["Non-BCC", "BCC", "Non-BCC"],
+    probabilities=[0.08, 0.91, 0.42],  # P(BCC)
+    positive_label="BCC",
+    n_bootstrap=2_000,
+)
+```
+
+`calibration["points"]` is plotting-ready curve data. Clinical reports require
+both observed classes; use the general classification metrics for a single-class
+fold diagnostic.
+
 ## Boundaries
 
 Gray intentionally does not prescribe a universal image CSV schema, generic
