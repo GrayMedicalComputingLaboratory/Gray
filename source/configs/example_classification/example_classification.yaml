@@ -1,9 +1,0 @@
-{
-  "project": {"name": "color-classification-example", "output_root": "../../../outputs"},
-  "dataset": {"train_manifest": "../../../examples/classification/train.csv", "valid_manifest": "../../../examples/classification/valid.csv"},
-  "task": {"type": "classification"},
-  "model": {"name": "centroid_baseline", "model_version": "gray-example-0.1.0", "architecture": "centroid_rgb_v1"},
-  "train": {"seed": 42, "fold": "single"},
-  "runtime": {"device": "cpu"},
-  "data": {"data_version": "example_color_v1", "label_schema": "binary_color_v1"}
-}

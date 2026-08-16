@@ -1,5 +1,0 @@
-sample_id,image_path,label
-red_1,images/red_1.png,red
-red_2,images/red_2.png,red
-blue_1,images/blue_1.png,blue
-blue_2,images/blue_2.png,blue
