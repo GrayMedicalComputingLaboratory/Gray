@@ -10,8 +10,10 @@ Every source file has one owner and one responsibility.
 | `source/gray/core/device.py` | Explicit CPU/CUDA device validation. | Seeding, model execution or CUDA memory policy. |
 | `source/gray/core/interfaces.py` | Minimal stable contracts for project code. | Task-specific implementations. |
 | `source/gray/core/provenance.py` | Checkpoint checksum and model identity manifest. | Artifact writing policy or training logic. |
-| `source/gray/metrics/` | Stateless, reusable metric calculations. | File reads, model calls, threshold selection policy. |
-| `source/gray/utils/reproducibility.py` | Python, NumPy and PyTorch random-state control. | Logging or artifact serialization. |
+| `source/gray/metrics/<metric>.py` | One stateless, independently callable metric per file. | File reads, model calls, threshold selection policy. |
+| `source/gray/utils/seed_everything.py` | Process-wide Python, NumPy and PyTorch random-state control. | DataLoader worker initialization, logging or IO. |
+| `source/gray/utils/seed_worker.py` | One PyTorch DataLoader worker's random-state control. | Global process seeding or IO. |
+| `source/gray/utils/torch_generator.py` | Seeded PyTorch `Generator` construction. | DataLoader configuration or global seeding. |
 | `source/gray/utils/logging.py` | Console/file logger construction. | Metric reporting semantics. |
 | `source/gray/utils/io.py` | Small UTF-8 JSON artifact writes. | Project result schemas or data loading. |
 

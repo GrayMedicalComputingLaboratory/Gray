@@ -39,7 +39,7 @@ runtime:
 
 ```python
 # my_project/training.py
-from gray.utils.reproducibility import seed_everything
+from gray.utils.seed_everything import seed_everything
 
 def train(config: dict) -> dict:
     seed_everything(config["runtime"]["seed"])
@@ -47,7 +47,7 @@ def train(config: dict) -> dict:
     return {"experiment_id": config["experiment_id"], "status": "complete"}
 ```
 
-For PyTorch DataLoaders, pass `gray.utils.reproducibility.seed_worker` as
+For PyTorch DataLoaders, pass `gray.utils.seed_worker.seed_worker` as
 `worker_init_fn` and `torch_generator(seed)` as `generator`.
 
 Run each lifecycle stage through Gray:
@@ -64,7 +64,10 @@ When a stage function returns a dictionary, Gray writes it to
 
 ## Metrics
 
-`gray.metrics.classification_metrics` supports binary and multiclass reports:
+Each metric is an independent module, for example
+`gray.metrics.roc_auc.roc_auc` and `gray.metrics.f1.f1`. The optional
+`gray.metrics.classification_metrics` function only combines those calls into
+one report. Binary and multiclass reports support:
 
 - Accuracy and balanced accuracy
 - Precision, recall and F1 (macro and weighted)
