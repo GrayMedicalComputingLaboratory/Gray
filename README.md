@@ -50,6 +50,28 @@ def train(config: dict) -> dict:
 For PyTorch DataLoaders, pass `gray.utils.seed_worker.seed_worker` as
 `worker_init_fn` and `torch_generator(seed)` as `generator`.
 
+## Test-Time Augmentation
+
+`tta` returns selected, named inference variants. Prediction aggregation stays
+project-owned so the framework does not impose a logit or probability policy.
+
+```python
+from gray.utils import tta
+
+# image: [C, H, W], volume: [C, D, H, W] or [B, C, D, H, W]
+variants = tta(
+    volume,
+    dim="3d",
+    horizontal_flip=True,
+    vertical_flip=False,
+    rotate90_angles=[0, 90, 180, 270],
+)
+logits = [model(variant) for variant in variants.values()]
+```
+
+For `dim="3d"`, TTA never reverses or rotates the depth/Z axis. It applies the
+same transform to the final `H/W` plane of every slice.
+
 Run each lifecycle stage through Gray:
 
 ```powershell
