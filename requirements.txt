@@ -1,0 +1,4 @@
+numpy>=1.26
+Pillow>=10
+PyYAML>=6
+# Project plugins may additionally require torch, albumentations, timm, MONAI, nnU-Net, etc.

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graycv"
+version = "0.1.0"
+description = "Gray Medical Computing Laboratory computer-vision framework template"
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "Pillow>=10", "PyYAML>=6"]
+
+[project.scripts]
+graycv = "graycv.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "source"}
+
+[tool.setuptools.packages.find]
+where = ["source"]
+include = ["graycv*"]
