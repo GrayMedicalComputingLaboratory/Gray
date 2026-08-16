@@ -7,7 +7,7 @@ name = "gray"
 version = "0.1.0"
 description = "Gray Medical Computing Laboratory computer-vision framework template"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.26", "Pillow>=10", "PyYAML>=6"]
+dependencies = ["numpy>=1.26", "PyYAML>=6", "scikit-learn>=1.4"]
 
 [project.scripts]
 gray = "gray.cli:main"

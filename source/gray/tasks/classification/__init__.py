@@ -1,3 +1,3 @@
-from .model import CentroidClassifier
+"""Classification task extension boundary."""
 
-__all__ = ["CentroidClassifier"]
+__all__: list[str] = []

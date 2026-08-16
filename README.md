@@ -1,61 +1,91 @@
 # Gray
 
-Gray is the Gray Medical Computing Laboratory training-research framework for computer-vision and medical-AI projects.
-
-It provides a training-research lifecycle: preparation interfaces, training, validation, scoring, analysis, experiment traceability, and extension boundaries for classification, detection, segmentation, and medical CV plugins.
-
-## Layout
-
-```text
-source/gray/ reusable package: core, tasks, datasets, trainers, evaluators, metrics, visualization
-source/configs/<experiment_id>/<experiment_id>.yaml  portable, identity-bearing configurations
-examples/     small task examples
-scripts/      setup and smoke-test commands
-tests/        unit tests
-docs/         future plugin documentation
-```
-
-Read [Commercial Baseline](docs/COMMERCIAL_BASELINE.md) before adapting it for a customer or regulated workflow.
+Gray is a small, reusable training-research foundation for Gray Medical
+Computing Laboratory computer-vision and medical-AI projects. It provides
+configuration identity, reproducibility, metrics, artifact paths, stage
+dispatching, and extension contracts. Models, datasets, augmentation, loss,
+and inference remain owned by the project that needs them.
 
 ## Install
 
 ```powershell
-cd D:\Desktop\Gray\Gray
-python -m pip install -e .
-python scripts/create_example_images.py
+python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
 ```
 
-## Quick Start
+For active local framework work:
 
 ```powershell
-gray train --config source/configs/example_classification/example_classification.yaml
-gray validate --config source/configs/example_classification/example_classification.yaml
-gray analyze --config source/configs/example_classification/example_classification.yaml
+python -m pip install -e D:\Desktop\Frameworks\Gray
 ```
 
-The example writes model, validation and analysis artifacts below `outputs/example_classification/`. The centroid baseline proves configuration identity, paths, artifacts and evaluation. Replace it in real work; it is not a medical model.
+## Project Integration
 
-## Add a Project
+Each project declares its own stage entrypoints. Gray imports and calls the
+configured function with the resolved configuration dictionary.
 
-1. Copy a config and implement a project-local dataset with samples and metadata.
-2. Add a model under the project or task plugin. Keep task-specific loss and preprocessing beside it.
-3. Reuse `gray.core` configuration and lifecycle contracts.
-4. Add an evaluator, OOF scorer when applicable, and tests for the new task.
-5. Promote code to Gray only after another independent project needs the same stable behavior.
+```yaml
+# configs/exp_001.yaml
+experiment_id: exp_001
+project:
+  output_root: ../../outputs
+  entrypoints:
+    train: my_project.training:train
+    validate: my_project.validation:validate
+    analyze: my_project.analysis:analyze
+runtime:
+  seed: 42
+  device: cuda:0
+```
 
-## Extend Tasks
+```python
+# my_project/training.py
+from gray.utils.runtime import seed_everything
 
-Detection and segmentation are intentionally not empty placeholder packages. Add them when a concrete implementation needs unifying. The `gray.core.interfaces` contracts are deliberately small so task code retains valid forward, loss, and preprocessing semantics.
+def train(config: dict) -> dict:
+    seed_everything(config["runtime"]["seed"])
+    # Build this project's dataset, model, optimizer and training loop.
+    return {"experiment_id": config["experiment_id"], "status": "complete"}
+```
 
-## Tests
+For PyTorch DataLoaders, pass `gray.utils.runtime.seed_worker` as
+`worker_init_fn` and `torch_generator(seed)` as `generator`.
+
+Run each lifecycle stage through Gray:
 
 ```powershell
-python -m compileall -q source tests
-python -m pytest -q
-python scripts/smoke_test.py
-python scripts/smoke_test.py
+python -m gray.cli train --config configs\exp_001.yaml
+python -m gray.cli validate --config configs\exp_001.yaml
+python -m gray.cli analyze --config configs\exp_001.yaml
 ```
 
-## Limits
+If your Python Scripts directory is on `PATH`, `gray train ...` is equivalent.
+When a stage function returns a dictionary, Gray writes it to
+`<output_root>/<experiment_id>/<stage>/summary.json`.
 
-Gray intentionally does not design generic inference, Web, serving, DICOM/NIfTI/WSI IO, nnU-Net, YOLO, DINO, MLOps orchestration, or a universal loss/model base class. A project may extract its simple inference code locally; production deployment follows the deployment standard separately.
+## Metrics
+
+`gray.metrics.classification_metrics` supports binary and multiclass reports:
+
+- Accuracy and balanced accuracy
+- Precision, recall and F1 (macro and weighted)
+- Confusion matrix and per-class report
+- Specificity (macro and per class)
+- ROC-AUC, PR-AUC / average precision, log loss and Brier score when scores are supplied
+
+```python
+from gray.metrics import classification_metrics
+
+metrics = classification_metrics(
+    targets=["Non-BCC", "BCC", "BCC"],
+    predictions=["Non-BCC", "BCC", "Non-BCC"],
+    scores=[0.10, 0.91, 0.42],
+    labels=["Non-BCC", "BCC"],
+)
+```
+
+## Boundaries
+
+Gray intentionally does not prescribe a universal image CSV schema, generic
+inference service, Web UI, 3D medical loader, loss function, model base class,
+or augmentation pipeline. Promote code into Gray only after two independent
+projects need the same stable behavior.

@@ -1,4 +1,4 @@
 numpy>=1.26
-Pillow>=10
 PyYAML>=6
+scikit-learn>=1.4
 # Project plugins declare their own task-specific dependencies.

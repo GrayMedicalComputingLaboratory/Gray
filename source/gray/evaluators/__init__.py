@@ -1,3 +1,3 @@
-from .classification import ClassificationEvaluator
+"""Project-owned evaluator integrations."""
 
-__all__ = ["ClassificationEvaluator"]
+__all__: list[str] = []
