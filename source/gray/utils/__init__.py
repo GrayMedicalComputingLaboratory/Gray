@@ -1,1 +1,1 @@
-"""Framework utility functions."""
+"""Cross-project utilities for IO, logging and reproducibility."""

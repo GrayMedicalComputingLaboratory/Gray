@@ -2,13 +2,13 @@
 
 Keep an implementation in its project until two independent projects share the same stable behavior.
 
-## Add a classification model
+## Add project-specific code
 
-Implement `predict()` and `save()` from `gray.core.interfaces.BaseModel`, then make the project trainer construct it. Loss functions, augmentations, and preprocessing stay with the project unless they are reused unchanged.
+Implement models, datasets, trainers and evaluators inside the project package. Loss functions, augmentations, preprocessing and data schemas stay with the project unless they are reused unchanged by two independent projects.
 
 ## Add detection or segmentation
 
-Create `gray/tasks/<task>/` only alongside a working dataset, trainer, evaluator, metric, and visualization implementation. Do not add an empty plugin package in advance.
+Do not create empty framework task packages. Promote a tested cross-project abstraction to Gray only after two independent projects share the same stable contract.
 
 ## Add medical imaging
 

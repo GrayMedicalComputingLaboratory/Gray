@@ -6,7 +6,7 @@ import importlib
 from typing import Any, Callable
 
 from gray.core.config import artifact_dir, load_config
-from gray.utils.runtime import write_json
+from gray.utils.io import write_json
 
 
 def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, Any]], Any]:

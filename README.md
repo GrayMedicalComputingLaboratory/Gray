@@ -39,7 +39,7 @@ runtime:
 
 ```python
 # my_project/training.py
-from gray.utils.runtime import seed_everything
+from gray.utils.reproducibility import seed_everything
 
 def train(config: dict) -> dict:
     seed_everything(config["runtime"]["seed"])
@@ -47,7 +47,7 @@ def train(config: dict) -> dict:
     return {"experiment_id": config["experiment_id"], "status": "complete"}
 ```
 
-For PyTorch DataLoaders, pass `gray.utils.runtime.seed_worker` as
+For PyTorch DataLoaders, pass `gray.utils.reproducibility.seed_worker` as
 `worker_init_fn` and `torch_generator(seed)` as `generator`.
 
 Run each lifecycle stage through Gray:
@@ -89,3 +89,6 @@ Gray intentionally does not prescribe a universal image CSV schema, generic
 inference service, Web UI, 3D medical loader, loss function, model base class,
 or augmentation pipeline. Promote code into Gray only after two independent
 projects need the same stable behavior.
+
+See [Architecture](docs/ARCHITECTURE.md) for the responsibility and ownership
+of every framework module.
