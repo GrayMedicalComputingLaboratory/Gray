@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from graycv.core.interfaces import BaseEvaluator
-from graycv.datasets import ImageCsvDataset
-from graycv.metrics import classification_metrics
-from graycv.tasks.classification import CentroidClassifier
-from graycv.utils.runtime import write_json
+from gray.core.interfaces import BaseEvaluator
+from gray.datasets import ImageCsvDataset
+from gray.metrics import classification_metrics
+from gray.tasks.classification import CentroidClassifier
+from gray.utils.runtime import write_json
 
 
 class ClassificationEvaluator(BaseEvaluator):

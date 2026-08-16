@@ -1,4 +1,4 @@
-"""GrayCV: small, extensible computer-vision research framework."""
+"""Gray: small, extensible computer-vision research framework."""
 
 from .core.config import artifact_dir, load_config
 

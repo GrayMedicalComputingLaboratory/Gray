@@ -1,6 +1,6 @@
 # Commercial Baseline
 
-GrayCV is a commercial framework baseline, not a production medical-device release.
+Gray is a commercial framework baseline, not a production medical-device release.
 
 ## Enforced framework contracts
 
@@ -13,7 +13,7 @@ GrayCV is a commercial framework baseline, not a production medical-device relea
 
 ## Required task-plugin responsibilities
 
-Classification, detection, segmentation and medical plugins must provide their own input validation, loss, augmentation, evaluator, model metadata, batch progress, and testing. A cross-validation task must produce OOF predictions, fold summaries, a confusion matrix and diagnostic threshold analysis; a single-run task must state why OOF does not apply. Inference and serving are intentionally project-owned, not GrayCV Core.
+Classification, detection, segmentation and medical plugins must provide their own input validation, loss, augmentation, evaluator, model metadata, batch progress, and testing. A cross-validation task must produce OOF predictions, fold summaries, a confusion matrix and diagnostic threshold analysis; a single-run task must state why OOF does not apply. Inference and serving are intentionally project-owned, not Gray Core.
 
 ## Before regulated deployment
 

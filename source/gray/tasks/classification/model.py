@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from graycv.core.interfaces import BaseModel
+from gray.core.interfaces import BaseModel
 
 
 class CentroidClassifier(BaseModel):

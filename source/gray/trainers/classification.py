@@ -5,12 +5,12 @@ from typing import Any
 
 import numpy as np
 
-from graycv.core.config import artifact_dir
-from graycv.core.interfaces import BaseTrainer
-from graycv.core.runtime import model_manifest
-from graycv.datasets import ImageCsvDataset
-from graycv.tasks.classification import CentroidClassifier
-from graycv.utils.runtime import write_json
+from gray.core.config import artifact_dir
+from gray.core.interfaces import BaseTrainer
+from gray.core.runtime import model_manifest
+from gray.datasets import ImageCsvDataset
+from gray.tasks.classification import CentroidClassifier
+from gray.utils.runtime import write_json
 
 
 class ClassificationTrainer(BaseTrainer):

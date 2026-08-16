@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from graycv.metrics import classification_metrics
-from graycv.tasks.classification import CentroidClassifier
+from gray.metrics import classification_metrics
+from gray.tasks.classification import CentroidClassifier
 
 
 class ClassificationTests(unittest.TestCase):
