@@ -140,6 +140,34 @@ Gray saves the SQLite study, trial configuration snapshots, trial metrics,
 best-parameter YAML and study summary below
 `<output_root>/<experiment_id>/optuna/`. The source YAML is never modified.
 
+## DICOM Processing
+
+Gray's optional `gray.dicom` module uses SimpleITK only. It does not discover
+Series, select patients, or own DICOM metadata policy. The project supplies an
+already selected and ordered file list, then can call:
+
+```python
+from gray.dicom import (
+    apply_monochrome,
+    apply_rescale,
+    apply_window_level,
+    get_spacing,
+    read_series,
+    resample_volume,
+)
+
+image = read_series(ordered_dicom_files)
+image = apply_rescale(image)
+image = apply_monochrome(image)
+image = apply_window_level(image, window_width=400, window_center=40)
+image = resample_volume(image, target_spacing=(1.0, 1.0, 1.0))
+spacing = get_spacing(image)
+```
+
+Use `interpolator="nearest"` for masks and labels. Do not call
+`apply_rescale` twice if the upstream reader has already converted stored
+values to physical units.
+
 ## Metrics
 
 Each metric is an independent module, for example
