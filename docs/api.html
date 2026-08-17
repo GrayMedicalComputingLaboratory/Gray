@@ -11,13 +11,13 @@
     a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
     code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; } code { padding:1px 4px; color:#3b4650; background:var(--soft); border:1px solid #e4e6e8; border-radius:3px; font-size:.93em; }
     header { height:58px; padding:0 28px; display:flex; align-items:center; gap:24px; color:#fff; background:#202124; position:sticky; top:0; z-index:5; }
-    header h1 { margin:0; font-size:18px; white-space:nowrap; } header p { order:3; margin:0; color:#bfc4ca; font-size:12px; }
+    header h1 { margin:0; display:flex; align-items:center; gap:9px; font-size:18px; white-space:nowrap; } header h1 img { width:25px; height:25px; object-fit:contain; border-radius:5px; } header p { order:3; margin:0; color:#bfc4ca; font-size:12px; }
     header p code { color:#d8dde2; background:transparent; border:0; }
     header input { order:2; margin-left:auto; width:230px; height:30px; padding:4px 10px; color:#fff; background:#36393d; border:1px solid #555a60; border-radius:4px; outline:0; font-size:13px; } header input:focus { border-color:#8bb9d8; } header input::placeholder { color:#c4c8cc; }
     h2 { margin:0 0 8px; font-size:24px; font-weight:650; } h3 { margin:0 0 8px; font-size:16px; }
     main { display:grid; grid-template-columns:245px minmax(0,940px); gap:0; max-width:1440px; margin:0 auto; padding:0; }
     nav { position:sticky; top:58px; align-self:start; height:calc(100vh - 58px); overflow:auto; padding:24px 20px; background:var(--nav); border-right:1px solid var(--line); border-radius:0; }
-    nav strong { display:block; margin-bottom:10px; color:#71777e; text-transform:uppercase; letter-spacing:.08em; font-size:12px; }
+    nav strong { display:flex; align-items:center; gap:9px; margin-bottom:18px; color:#3c434a; font-size:16px; font-weight:700; } nav strong img { width:28px; height:28px; object-fit:contain; border-radius:5px; }
     nav a { display:block; padding:4px 0 4px 17px; color:#5d646c; border-radius:0; font-size:13px; } nav a:hover { color:var(--blue); background:transparent; }
     section { margin:0 0 10px; padding:30px 55px; background:var(--paper); border:0; border-bottom:1px solid var(--line); border-radius:0; box-shadow:none; scroll-margin-top:70px; }
     .lead { color:var(--muted); margin-top:-3px; } .api { margin:17px 0; padding:0; border:1px solid var(--line); border-left:3px solid var(--blue); background:#fff; border-radius:4px; overflow:hidden; }
@@ -28,20 +28,20 @@
     table { width:100%; border-collapse:collapse; margin:12px 0; } th,td { padding:8px 9px; text-align:left; vertical-align:top; border-top:1px solid var(--line); } th { width:22%; color:#555d66; background:#fbfbfc; font-weight:650; }
     .tag { display:inline-block; margin-left:6px; padding:1px 7px; color:#fff; background:var(--blue); border-radius:10px; font-size:12px; } .note { padding:11px 13px; color:#5e4b22; background:#fff9ed; border-left:3px solid #c58b26; border-radius:0; }
     .search-hidden { display:none !important; }
-    footer { padding:20px 55px 36px; color:var(--muted); text-align:left; border-top:1px solid var(--line); }
+    footer { display:flex; align-items:center; gap:8px; padding:20px 55px 36px; color:var(--muted); text-align:left; border-top:1px solid var(--line); } footer img { width:18px; height:18px; object-fit:contain; opacity:.9; }
     @media (max-width:900px) { main { display:block; } nav { position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); } section { padding:25px 24px; } header p { display:none; } header input { width:190px; } }
     @media (max-width:520px) { header { padding:0 14px; gap:12px; } header input { width:44vw; } section { padding:22px 15px; } h2 { font-size:22px; } }
   </style>
 </head>
 <body>
 <header>
-  <h1>Gray API Reference</h1>
+  <h1><img src="assets/gray-mark.png" alt="Gray logo">Gray API Reference</h1>
   <p>Gray Medical Computing Laboratory 的可复用训练研究框架 API。本文档对应当前 <code>main</code> 分支，说明输入、输出、异常和典型调用方式。</p>
   <input id="api-search" type="search" placeholder="Search API" aria-label="Search API">
 </header>
 <main>
   <nav>
-    <strong>目录</strong>
+    <strong><img src="assets/gray-mark.png" alt="">目录</strong>
     <a href="#install">安装与约定</a>
     <a href="#config">配置与 CLI</a>
     <a href="#utils">Utils</a>
@@ -149,7 +149,7 @@ logits = [model(value) for value in variants.values()]</pre>
     </section>
   </div>
 </main>
-<footer>Gray Medical Computing Laboratory · API Reference</footer>
+<footer><img src="assets/gray-mark.png" alt="">Gray Medical Computing Laboratory · API Reference</footer>
 <script>
   (function () {
     var input = document.getElementById("api-search");
