@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gray API Reference</title>
   <style>
-    :root { --ink:#25282c; --muted:#656b73; --line:#d7dbe0; --blue:#1b6ca8; --soft:#f4f5f6; --gold:#b97800; --green:#287a45; --paper:#fff; --nav:#eef0f3; }
+    :root { --ink:#e5e8eb; --muted:#aeb6be; --line:#3b4148; --blue:#6db8ea; --soft:#272d33; --gold:#e1b75d; --green:#72c48d; --paper:#171b20; --nav:#1e242a; }
     * { box-sizing:border-box; } html { scroll-behavior:smooth; }
-    body { margin:0; color:var(--ink); background:#fff; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
-    a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
-    code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; } code { padding:1px 4px; color:#3b4650; background:var(--soft); border:1px solid #e4e6e8; border-radius:3px; font-size:.93em; }
-    header { height:58px; padding:0 28px; display:flex; align-items:center; gap:24px; color:#fff; background:#202124; position:sticky; top:0; z-index:5; }
-    header h1 { margin:0; display:flex; align-items:center; gap:9px; font-size:18px; white-space:nowrap; } header h1 img { width:25px; height:25px; object-fit:contain; border-radius:5px; } header p { order:3; margin:0; color:#bfc4ca; font-size:12px; }
+    body { margin:0; color:var(--ink); background:#12161a; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; }
+    a { color:var(--blue); text-decoration:none; } a:hover { color:#a7d7f6; text-decoration:underline; }
+    code,pre { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; } code { padding:1px 4px; color:#d7e9f7; background:var(--soft); border:1px solid #394149; border-radius:3px; font-size:.93em; }
+    header { height:58px; padding:0 28px; display:flex; align-items:center; gap:24px; color:#fff; background:#0f1215; border-bottom:1px solid #353c43; position:sticky; top:0; z-index:5; }
+    header h1 { margin:0; display:flex; align-items:center; gap:9px; font-size:18px; white-space:nowrap; } header h1 img { width:25px; height:25px; object-fit:contain; border-radius:5px; } header p { order:3; margin:0; color:#aeb6be; font-size:12px; }
     header p code { color:#d8dde2; background:transparent; border:0; }
-    header input { order:2; margin-left:auto; width:230px; height:30px; padding:4px 10px; color:#fff; background:#36393d; border:1px solid #555a60; border-radius:4px; outline:0; font-size:13px; } header input:focus { border-color:#8bb9d8; } header input::placeholder { color:#c4c8cc; }
+    header input { order:2; margin-left:auto; width:230px; height:30px; padding:4px 10px; color:#fff; background:#292f35; border:1px solid #4a535c; border-radius:4px; outline:0; font-size:13px; } header input:focus { border-color:#6db8ea; } header input::placeholder { color:#aeb6be; }
     h2 { margin:0 0 8px; font-size:24px; font-weight:650; } h3 { margin:0 0 8px; font-size:16px; }
     main { display:grid; grid-template-columns:245px minmax(0,940px); gap:0; max-width:1440px; margin:0 auto; padding:0; }
     nav { position:sticky; top:58px; align-self:start; height:calc(100vh - 58px); overflow:auto; padding:24px 20px; background:var(--nav); border-right:1px solid var(--line); border-radius:0; }
-    nav strong { display:flex; align-items:center; gap:9px; margin-bottom:18px; color:#3c434a; font-size:16px; font-weight:700; } nav strong img { width:28px; height:28px; object-fit:contain; border-radius:5px; }
-    nav a { display:block; padding:4px 0 4px 17px; color:#5d646c; border-radius:0; font-size:13px; } nav a:hover { color:var(--blue); background:transparent; }
+    nav strong { display:flex; align-items:center; gap:9px; margin-bottom:18px; color:#f0f2f4; font-size:16px; font-weight:700; } nav strong img { width:28px; height:28px; object-fit:contain; border-radius:5px; }
+    nav a { display:block; padding:4px 0 4px 17px; color:#aeb6be; border-radius:0; font-size:13px; } nav a:hover { color:var(--blue); background:transparent; }
     section { margin:0 0 10px; padding:30px 55px; background:var(--paper); border:0; border-bottom:1px solid var(--line); border-radius:0; box-shadow:none; scroll-margin-top:70px; }
-    .lead { color:var(--muted); margin-top:-3px; } .api { margin:17px 0; padding:0; border:1px solid var(--line); border-left:3px solid var(--blue); background:#fff; border-radius:4px; overflow:hidden; }
+    .lead { color:var(--muted); margin-top:-3px; } .api { margin:17px 0; padding:0; border:1px solid var(--line); border-left:3px solid var(--blue); background:#1b2026; border-radius:4px; overflow:hidden; }
     .api.gold { border-left-color:var(--gold); } .api.green { border-left-color:var(--green); } .api.red { border-left-color:#bd3b3b; }
-    .api h3 { padding:12px 15px 3px; margin:0; background:#fafbfc; } .api h3 code { color:#263b4b; font-size:15px; font-weight:650; background:transparent; border:0; padding:0; }
+    .api h3 { padding:12px 15px 3px; margin:0; background:#222830; } .api h3 code { color:#dff1ff; font-size:15px; font-weight:650; background:transparent; border:0; padding:0; }
     .api > p, .api > table { margin-left:15px; margin-right:15px; } .api > p:last-child { margin-bottom:14px; }
-    pre { overflow:auto; margin:12px 0 0; padding:13px 15px; color:#30363b; background:#f4f5f6; border:1px solid #e0e2e5; border-radius:4px; font-size:13px; }
-    table { width:100%; border-collapse:collapse; margin:12px 0; } th,td { padding:8px 9px; text-align:left; vertical-align:top; border-top:1px solid var(--line); } th { width:22%; color:#555d66; background:#fbfbfc; font-weight:650; }
-    .tag { display:inline-block; margin-left:6px; padding:1px 7px; color:#fff; background:var(--blue); border-radius:10px; font-size:12px; } .note { padding:11px 13px; color:#5e4b22; background:#fff9ed; border-left:3px solid #c58b26; border-radius:0; }
+    pre { overflow:auto; margin:12px 0 0; padding:13px 15px; color:#dce2e7; background:#111519; border:1px solid #353d45; border-radius:4px; font-size:13px; }
+    table { width:100%; border-collapse:collapse; margin:12px 0; } th,td { padding:8px 9px; text-align:left; vertical-align:top; border-top:1px solid var(--line); } th { width:22%; color:#bdc6ce; background:#222830; font-weight:650; }
+    .tag { display:inline-block; margin-left:6px; padding:1px 7px; color:#fff; background:#286a99; border-radius:10px; font-size:12px; } .note { padding:11px 13px; color:#ecd9a3; background:#322c1e; border-left:3px solid #c58b26; border-radius:0; }
     .search-hidden { display:none !important; }
     footer { display:flex; align-items:center; gap:8px; padding:20px 55px 36px; color:var(--muted); text-align:left; border-top:1px solid var(--line); } footer img { width:18px; height:18px; object-fit:contain; opacity:.9; }
     @media (max-width:900px) { main { display:block; } nav { position:static; height:auto; border-right:0; border-bottom:1px solid var(--line); } section { padding:25px 24px; } header p { display:none; } header input { width:190px; } }
@@ -71,6 +71,10 @@
 python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.00003
 python -m gray.cli tune --config configs/exp_00.yaml</pre>
       <p><code>train</code> 在 <code>optuna.enabled: true</code> 时自动搜索；<code>tune</code> 强制搜索。项目 entrypoint 需返回字典。</p>
+      <div class="api"><h3><code>gray.core.config.resolve_path</code></h3><p><code>resolve_path(config, value) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>config</code> 必须包含 <code>_config_dir</code>；相对路径从 YAML 所在目录解析，绝不依赖当前工作目录。</td></tr><tr><th>Returns</th><td>绝对路径；传入绝对路径时保持其语义。</td></tr></table></div>
+      <div class="api"><h3><code>gray.core.config.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>stage</code> 只能是相对单级目录名，不能为空、绝对路径或包含 <code>..</code>；<code>create=True</code> 时创建目录。</td></tr><tr><th>Returns</th><td><code>output_root / experiment_id / stage</code>。</td></tr><tr><th>Raises</th><td>非法 stage 时抛出 <code>ValueError</code>。</td></tr></table></div>
+      <div class="api"><h3><code>gray.core.device.resolve_device</code></h3><p><code>resolve_device(value: str | int) -&gt; str</code></p><table><tr><th>Accepted</th><td><code>"cpu"</code>、<code>"cuda"</code>、<code>"cuda:N"</code> 或非负 GPU 索引。</td></tr><tr><th>Returns</th><td>规范化设备名，例如 <code>cuda:0</code>。</td></tr><tr><th>Raises</th><td>设备格式错误抛出 <code>ValueError</code>；请求的 CUDA 不存在抛出 <code>RuntimeError</code>，不会静默回退 CPU。</td></tr></table></div>
+      <div class="api"><h3><code>gray.core.provenance.sha256</code> / <code>model_manifest</code></h3><p><code>sha256(path: Path) -&gt; str</code><br><code>model_manifest(config, checkpoint: Path) -&gt; dict</code></p><p>前者以流式方式计算文件哈希；后者记录实验、模型版本、数据版本、标签 schema、随机种子、fold、配置哈希、Git commit 和 checkpoint 哈希，适合随模型一同归档。</p></div>
     </section>
 
     <section id="utils">
@@ -84,6 +88,7 @@ python -m gray.cli tune --config configs/exp_00.yaml</pre>
     <section id="metrics">
       <h2>通用指标</h2>
       <p class="lead">每项指标均可独立导入；<code>classification_metrics</code> 只负责组合。</p>
+      <div class="api"><h3>输入约定与失败行为</h3><table><tr><th>targets / predictions</th><td>等长的一维序列；标签可为字符串或数字。长度不一致、空输入会抛出 <code>ValueError</code>。</td></tr><tr><th>scores / probabilities</th><td>二分类可传正类概率的一维序列；多分类传 <code>[n_samples, n_classes]</code>，列顺序必须与 <code>labels</code> 一致。</td></tr><tr><th>average</th><td><code>macro</code> 对每类等权；<code>weighted</code> 按 support 加权；不支持的值会抛出 <code>ValueError</code>。</td></tr><tr><th>single-class input</th><td>ROC-AUC、PR-AUC、校准相关指标无法定义时返回 <code>None</code>，而不是伪造数值。</td></tr></table></div>
       <table><tr><th>函数</th><th>输入</th><th>输出</th></tr>
         <tr><td><code>accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
         <tr><td><code>balanced_accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
@@ -99,11 +104,13 @@ python -m gray.cli tune --config configs/exp_00.yaml</pre>
 value = accuracy(targets, predictions)
 auc = roc_auc(targets, positive_probabilities, labels=["Non-BCC", "BCC"])
 report = classification_metrics(targets, predictions, positive_probabilities, ["Non-BCC", "BCC"])</pre>
+      <div class="api"><h3>函数签名索引</h3><table><tr><th>Classification</th><td><code>accuracy(targets, predictions)</code><br><code>balanced_accuracy(targets, predictions)</code><br><code>precision(..., labels=None, average="macro")</code><br><code>recall(..., labels=None, average="macro")</code><br><code>f1(..., labels=None, average="macro")</code><br><code>confusion_matrix(..., labels=None)</code><br><code>classification_report(..., labels=None)</code></td></tr><tr><th>Scores</th><td><code>roc_auc(..., labels=None)</code><br><code>pr_auc(..., labels=None)</code><br><code>log_loss(..., labels)</code><br><code>brier_score(..., labels)</code></td></tr><tr><th>Clinical helpers</th><td><code>sensitivity(..., positive_label=None)</code><br><code>specificity(..., labels=None)</code><br><code>specificity_per_class(..., labels=None)</code><br><code>binary_specificity(..., positive_label=None)</code><br><code>ppv(..., positive_label=None)</code><br><code>npv(..., positive_label=None)</code></td></tr></table></div>
     </section>
 
     <section id="clinical">
       <h2>临床二分类</h2>
       <div class="api gold"><h3><code>clinical_binary_metrics</code></h3><p><code>clinical_binary_metrics(targets, predictions, probabilities, positive_label=None, n_bins=10, n_bootstrap=2000, confidence=0.95, seed=42, thresholds=None) -&gt; dict</code></p><p>组合 Sensitivity、Specificity、PPV、NPV、ROC-AUC、PR-AUC、ECE、Brier、bootstrap CI 和阈值报告。</p><p>目标与预测必须同时包含两个类别；单类 fold 使用通用指标。</p></div>
+      <div class="api"><h3>clinical_binary_metrics 返回结构</h3><table><tr><th>Prevalence</th><td><code>positive_label</code>、<code>negative_label</code>、<code>samples</code>、<code>positive_prevalence</code>。</td></tr><tr><th>Point estimates</th><td><code>accuracy</code>、<code>sensitivity</code>、<code>specificity</code>、<code>ppv</code>、<code>npv</code>、<code>roc_auc</code>、<code>pr_auc</code>。</td></tr><tr><th>Uncertainty</th><td><code>confidence_intervals</code> 对上述主要指标提供 percentile bootstrap 的 <code>estimate / lower / upper / valid_bootstrap</code>。</td></tr><tr><th>Calibration</th><td><code>calibration.points</code> 是绘图数据，另含 ECE 与 Brier score。</td></tr><tr><th>Thresholds</th><td><code>threshold_report</code> 逐阈值提供 Sensitivity、Specificity、PPV、NPV、F1 和 Youden J。</td></tr></table></div>
       <div class="api"><h3><code>calibration_curve</code></h3><p>输出 <code>points</code>、<code>ece</code> 和 <code>brier_score</code>，points 可直接用于绘图。</p></div>
       <div class="api"><h3><code>bootstrap_ci</code></h3><p><code>bootstrap_ci(targets, values, metric, n_bootstrap=2000, confidence=0.95, seed=42) -&gt; dict</code>。返回 estimate、lower、upper 和有效 bootstrap 数。</p></div>
       <div class="api"><h3><code>threshold_report</code></h3><p>输出每个阈值的 Sensitivity、Specificity、PPV、NPV、F1、Youden J，并返回 Youden/F1 最优点。</p></div>
@@ -130,6 +137,11 @@ logits = [model(value) for value in variants.values()]</pre>
         <tr><td><code>resample_volume</code></td><td>Image、target_spacing、interpolator</td><td>重采样后的 Image</td></tr>
       </table>
       <div class="note">mask/label 使用 <code>interpolator="nearest"</code>；如果上游已经完成 rescale，不要重复调用 <code>apply_rescale</code>。</div>
+      <div class="api"><h3>推荐处理顺序</h3><pre>image = read_series(ordered_paths)
+image = apply_rescale(image)              # stored -&gt; physical units
+image = apply_monochrome(image)           # MONOCHROME1 -&gt; 2
+image = apply_window_level(image, 400, 40)
+image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series</th><td>要求调用方已经完成 Series 选择和文件排序；空列表或缺失文件会抛出异常。</td></tr><tr><th>apply_rescale</th><td>从 tags <code>0028|1053</code> / <code>0028|1052</code> 读取 slope/intercept，slope 为 0 时拒绝处理。</td></tr><tr><th>apply_window_level</th><td><code>lower=center-width/2</code>、<code>upper=center+width/2</code>，再映射到 <code>[output_min, output_max]</code>。</td></tr><tr><th>resample_volume</th><td>支持 <code>nearest</code>、<code>linear</code>、<code>bspline</code>；保持 origin 和 direction，并按物理范围计算新尺寸。</td></tr></table></div>
     </section>
 
     <section id="optuna">
@@ -141,6 +153,7 @@ logits = [model(value) for value in variants.values()]</pre>
 
 # YAML: objective_key: valid.f1_macro</pre>
       <p class="note">Optuna 只搜索参数，不替代你的训练循环。最终模型必须用最佳参数重新训练，并单独记录最终结果。</p>
+      <div class="api"><h3>search_space 支持类型</h3><table><tr><th><code>float</code></th><td><code>low</code>、<code>high</code>，可选 <code>log</code>、<code>step</code>。</td></tr><tr><th><code>int</code></th><td><code>low</code>、<code>high</code>，可选 <code>log</code>、<code>step</code>。</td></tr><tr><th><code>categorical</code></th><td>非空 <code>choices</code> 列表。</td></tr><tr><th>Artifacts</th><td><code>optuna/study.db</code>、每个 trial 的 YAML/JSON、<code>best_params.yaml</code> 和 <code>study_summary.json</code>。</td></tr><tr><th>train_once</th><td>必须返回字典；<code>objective_key</code> 用点号路径提取，例如 <code>valid.f1_macro</code>。可选接收 <code>trial</code> 进行 pruning。</td></tr></table></div>
     </section>
 
     <section id="boundaries">
