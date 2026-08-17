@@ -23,6 +23,7 @@
     .lead { color:var(--muted); margin-top:-3px; } .api { margin:17px 0; padding:0; border:1px solid var(--line); border-left:3px solid var(--blue); background:#1b2026; border-radius:4px; overflow:hidden; }
     .api.gold { border-left-color:var(--gold); } .api.green { border-left-color:var(--green); } .api.red { border-left-color:#bd3b3b; }
     .api h3 { padding:12px 15px 3px; margin:0; background:#222830; } .api h3 code { color:#dff1ff; font-size:15px; font-weight:650; background:transparent; border:0; padding:0; }
+    .source-link { float:right; margin:1px 0 0 12px; color:#91c9ee; font-size:12px; font-weight:400; }
     .api > p, .api > table { margin-left:15px; margin-right:15px; } .api > p:last-child { margin-bottom:14px; }
     pre { overflow:auto; margin:12px 0 0; padding:13px 15px; color:#dce2e7; background:#111519; border:1px solid #353d45; border-radius:4px; font-size:13px; }
     table { width:100%; border-collapse:collapse; margin:12px 0; } th,td { padding:8px 9px; text-align:left; vertical-align:top; border-top:1px solid var(--line); } th { width:22%; color:#bdc6ce; background:#222830; font-weight:650; }
@@ -168,6 +169,36 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
     var input = document.getElementById("api-search");
     var entries = Array.prototype.slice.call(document.querySelectorAll(".api"));
     var sections = Array.prototype.slice.call(document.querySelectorAll("main > div > section"));
+    var root = "https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/";
+    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.optuna":"optuna/run_optuna.py"};
+    document.querySelectorAll(".api h3 code").forEach(function (label) {
+      var name = label.textContent.trim();
+      var path = null;
+      Object.keys(paths).some(function (prefix) {
+        if (name.indexOf(prefix) !== 0) return false;
+        var rest = name.slice(prefix.length).replace(/^\./, "").split(/\s|\//)[0];
+        if (prefix === "gray.utils" || prefix === "gray.dicom" || prefix === "gray.metrics") path = paths[prefix] + rest + ".py";
+        else if (prefix === "gray.optuna") path = paths[prefix];
+        else path = paths[prefix];
+        return true;
+      });
+      if (!path && name === "clinical_binary_metrics") path = "metrics/clinical_binary_metrics.py";
+      if (!path) {
+        var section = label.closest("section");
+        var sectionId = section && section.id;
+        var bare = name.split(/\s|\//)[0];
+        var folder = sectionId === "dicom" ? "dicom/" : (sectionId === "utils" || sectionId === "tta" ? "utils/" : (sectionId === "metrics" || sectionId === "clinical" ? "metrics/" : null));
+        if (folder && /^[a-z_]+$/.test(bare)) path = folder + bare + ".py";
+      }
+      if (!path) return;
+      var link = document.createElement("a");
+      link.className = "source-link";
+      link.href = root + path;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "View source ↗";
+      label.parentElement.appendChild(link);
+    });
     input.addEventListener("input", function () {
       var query = input.value.trim().toLowerCase();
       entries.forEach(function (entry) {
