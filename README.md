@@ -223,4 +223,5 @@ or augmentation pipeline. Promote code into Gray only after two independent
 projects need the same stable behavior.
 
 See [Architecture](docs/ARCHITECTURE.md) for the responsibility and ownership
-of every framework module.
+of every framework module. See [API Reference](docs/api.html) for function
+inputs, outputs and usage examples.

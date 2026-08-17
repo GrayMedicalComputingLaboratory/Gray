@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gray API Reference</title>
+  <style>
+    :root { --ink:#172033; --muted:#637086; --line:#dce3ee; --blue:#1769d2; --blue-soft:#eaf2ff; --gold:#b87900; --green:#16834b; --red:#bd3b3b; --paper:#fff; --wash:#f5f8fc; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--wash); font:15px/1.65 Inter,Segoe UI,Arial,sans-serif; }
+    header { padding:42px 7vw 38px; color:#fff; background:linear-gradient(120deg,#0d3f86,#1769d2); }
+    header p { max-width:780px; margin:10px 0 0; color:#dcecff; }
+    h1 { margin:0; font-size:34px; letter-spacing:.2px; }
+    h2 { margin:0 0 16px; font-size:25px; }
+    h3 { margin:0 0 8px; font-size:18px; }
+    main { display:grid; grid-template-columns:230px minmax(0,920px); gap:30px; max-width:1250px; margin:30px auto; padding:0 22px; }
+    nav { position:sticky; top:20px; align-self:start; padding:16px; background:var(--paper); border:1px solid var(--line); border-radius:8px; }
+    nav strong { display:block; margin-bottom:8px; color:var(--blue); }
+    nav a { display:block; padding:5px 7px; color:var(--muted); text-decoration:none; border-radius:5px; }
+    nav a:hover { color:var(--blue); background:var(--blue-soft); }
+    section { margin-bottom:26px; padding:26px; background:var(--paper); border:1px solid var(--line); border-radius:8px; box-shadow:0 3px 12px #183b6910; }
+    .lead { color:var(--muted); margin-top:-5px; }
+    .api { margin:18px 0; padding:17px 18px; border-left:4px solid var(--blue); background:#fbfdff; }
+    .api.gold { border-left-color:var(--gold); }
+    .api.green { border-left-color:var(--green); }
+    .api.red { border-left-color:var(--red); }
+    code, pre { font-family:Consolas,Monaco,monospace; }
+    code { padding:2px 5px; color:#063c88; background:var(--blue-soft); border-radius:4px; }
+    pre { overflow:auto; margin:12px 0 0; padding:14px 16px; color:#eaf2ff; background:#172033; border-radius:6px; }
+    table { width:100%; border-collapse:collapse; margin:12px 0; }
+    th,td { padding:9px 10px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+    th { color:#31557f; background:#f3f7fd; font-weight:700; }
+    .tag { display:inline-block; margin-left:6px; padding:1px 7px; color:#fff; background:var(--blue); border-radius:10px; font-size:12px; }
+    .note { padding:12px 14px; color:#604700; background:#fff8e7; border:1px solid #f2d38b; border-radius:6px; }
+    footer { padding:20px 7vw 36px; color:var(--muted); text-align:center; }
+    @media (max-width:800px) { main { display:block; margin-top:16px; } nav { position:static; margin-bottom:16px; } section { padding:20px; } h1 { font-size:28px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Gray API Reference</h1>
+  <p>Gray Medical Computing Laboratory 的可复用训练研究框架 API。本文档对应当前 <code>main</code> 分支，说明输入、输出、异常和典型调用方式。</p>
+</header>
+<main>
+  <nav>
+    <strong>目录</strong>
+    <a href="#install">安装与约定</a>
+    <a href="#config">配置与 CLI</a>
+    <a href="#utils">Utils</a>
+    <a href="#metrics">通用指标</a>
+    <a href="#clinical">临床二分类</a>
+    <a href="#tta">TTA</a>
+    <a href="#dicom">DICOM / SimpleITK</a>
+    <a href="#optuna">Optuna</a>
+    <a href="#boundaries">边界</a>
+  </nav>
+  <div>
+    <section id="install">
+      <h2>安装与约定</h2>
+      <p class="lead">Gray 不包含项目专用模型、数据集和训练循环。项目通过 entrypoint 接入 Gray。</p>
+      <pre>python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"</pre>
+      <div class="note">每个实验只维护一个 YAML；YAML 文件名就是 <code>experiment_id</code>。生成的 trial 配置只是运行快照，不是第二份人工配置。</div>
+    </section>
+
+    <section id="config">
+      <h2>配置与 CLI</h2>
+      <div class="api">
+        <h3><code>gray.core.config.load_config</code></h3>
+        <p><code>load_config(path, overrides=()) -&gt; tuple[dict, Path]</code></p>
+        <table><tr><th>输入</th><td><code>path</code>：单个 YAML 路径；<code>overrides</code>：Hydra 风格的 <code>key=value</code> 列表。</td></tr><tr><th>输出</th><td>解析后的普通字典和绝对配置路径；自动加入 <code>experiment_id</code>、<code>_config_dir</code>。</td></tr><tr><th>限制</th><td>不允许 <code>defaults</code>、配置组或自动切换工作目录。</td></tr></table>
+      </div>
+      <pre>python -m gray.cli train --config configs/exp_00.yaml
+python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.00003
+python -m gray.cli tune --config configs/exp_00.yaml</pre>
+      <p><code>train</code> 在 <code>optuna.enabled: true</code> 时自动搜索；<code>tune</code> 强制搜索。项目 entrypoint 需返回字典。</p>
+    </section>
+
+    <section id="utils">
+      <h2>Utils</h2>
+      <div class="api"><h3><code>gray.utils.seed_everything</code></h3><p><code>seed_everything(seed, deterministic=True) -&gt; None</code></p><p>固定 Python、Hash、NumPy、PyTorch、CUDA 和 cuDNN 随机状态。<code>deterministic=True</code> 会关闭 cuDNN benchmark。</p></div>
+      <div class="api"><h3><code>gray.utils.seed_worker</code></h3><p><code>seed_worker(worker_id) -&gt; None</code></p><p>用于 PyTorch <code>DataLoader(worker_init_fn=...)</code>，根据 worker seed 固定 Python 与 NumPy。</p></div>
+      <div class="api"><h3><code>gray.utils.torch_generator</code></h3><p><code>torch_generator(seed) -&gt; torch.Generator</code></p><p>返回可传给 <code>DataLoader(generator=...)</code> 的 PyTorch Generator。</p></div>
+      <div class="api"><h3><code>gray.utils.tta</code></h3><p><code>tta(sample, *, dim, horizontal_flip=False, vertical_flip=False, rotate90_angles=(0,)) -&gt; dict</code></p><p>支持 NumPy 与 PyTorch；<code>dim="2d"</code> 或 <code>"3d"</code>。3D 只对最后两个 H/W 轴变换，不翻转 Z 轴。</p></div>
+    </section>
+
+    <section id="metrics">
+      <h2>通用指标</h2>
+      <p class="lead">每项指标均可独立导入；<code>classification_metrics</code> 只负责组合。</p>
+      <table><tr><th>函数</th><th>输入</th><th>输出</th></tr>
+        <tr><td><code>accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
+        <tr><td><code>balanced_accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
+        <tr><td><code>precision / recall / f1</code></td><td>targets, predictions, labels?, average?</td><td>float</td></tr>
+        <tr><td><code>confusion_matrix</code></td><td>targets, predictions, labels?</td><td>整数二维列表</td></tr>
+        <tr><td><code>specificity / specificity_per_class</code></td><td>targets, predictions, labels?</td><td>float / dict</td></tr>
+        <tr><td><code>roc_auc</code></td><td>targets, scores, labels?</td><td>float 或 None</td></tr>
+        <tr><td><code>pr_auc</code></td><td>targets, scores, labels?</td><td>float 或 None</td></tr>
+        <tr><td><code>log_loss</code></td><td>targets, probabilities, labels</td><td>float 或 None</td></tr>
+        <tr><td><code>brier_score</code></td><td>targets, scores, labels</td><td>float 或 None</td></tr>
+      </table>
+      <pre>from gray.metrics import accuracy, roc_auc, classification_metrics
+value = accuracy(targets, predictions)
+auc = roc_auc(targets, positive_probabilities, labels=["Non-BCC", "BCC"])
+report = classification_metrics(targets, predictions, positive_probabilities, ["Non-BCC", "BCC"])</pre>
+    </section>
+
+    <section id="clinical">
+      <h2>临床二分类</h2>
+      <div class="api gold"><h3><code>clinical_binary_metrics</code></h3><p><code>clinical_binary_metrics(targets, predictions, probabilities, positive_label=None, n_bins=10, n_bootstrap=2000, confidence=0.95, seed=42, thresholds=None) -&gt; dict</code></p><p>组合 Sensitivity、Specificity、PPV、NPV、ROC-AUC、PR-AUC、ECE、Brier、bootstrap CI 和阈值报告。</p><p>目标与预测必须同时包含两个类别；单类 fold 使用通用指标。</p></div>
+      <div class="api"><h3><code>calibration_curve</code></h3><p>输出 <code>points</code>、<code>ece</code> 和 <code>brier_score</code>，points 可直接用于绘图。</p></div>
+      <div class="api"><h3><code>bootstrap_ci</code></h3><p><code>bootstrap_ci(targets, values, metric, n_bootstrap=2000, confidence=0.95, seed=42) -&gt; dict</code>。返回 estimate、lower、upper 和有效 bootstrap 数。</p></div>
+      <div class="api"><h3><code>threshold_report</code></h3><p>输出每个阈值的 Sensitivity、Specificity、PPV、NPV、F1、Youden J，并返回 Youden/F1 最优点。</p></div>
+    </section>
+
+    <section id="tta">
+      <h2>Test-Time Augmentation</h2>
+      <pre>from gray.utils import tta
+variants = tta(volume, dim="3d", horizontal_flip=True,
+               vertical_flip=False, rotate90_angles=[0, 90, 180, 270])
+logits = [model(value) for value in variants.values()]</pre>
+      <p>返回键包括 <code>original</code>、<code>horizontal_flip</code>、<code>vertical_flip</code>、<code>rotate90_90</code> 等。Gray 只生成变体，预测如何聚合由项目决定。</p>
+    </section>
+
+    <section id="dicom">
+      <h2>DICOM / SimpleITK</h2>
+      <p class="lead">当前只使用 SimpleITK；不处理患者 metadata、Series 发现或 Series 选择。</p>
+      <table><tr><th>函数</th><th>输入</th><th>输出</th></tr>
+        <tr><td><code>read_series</code></td><td>项目已排序的 DICOM 路径列表</td><td><code>sitk.Image</code></td></tr>
+        <tr><td><code>get_spacing</code></td><td><code>sitk.Image</code></td><td>正浮点 spacing 元组</td></tr>
+        <tr><td><code>apply_rescale</code></td><td><code>sitk.Image</code></td><td>应用 Slope/Intercept 后的 Image</td></tr>
+        <tr><td><code>apply_window_level</code></td><td>Image、window_width、window_center</td><td>映射到指定输出范围的 Image</td></tr>
+        <tr><td><code>apply_monochrome</code></td><td>Image、MONOCHROME1/2?</td><td>极性统一后的 Image</td></tr>
+        <tr><td><code>resample_volume</code></td><td>Image、target_spacing、interpolator</td><td>重采样后的 Image</td></tr>
+      </table>
+      <div class="note">mask/label 使用 <code>interpolator="nearest"</code>；如果上游已经完成 rescale，不要重复调用 <code>apply_rescale</code>。</div>
+    </section>
+
+    <section id="optuna">
+      <h2>Optuna</h2>
+      <div class="api green"><h3><code>gray.optuna.run_optuna</code></h3><p><code>run_optuna(config, train_once) -&gt; dict</code></p><p>从同一份 YAML 读取 search_space，复制配置、调用项目 train_once、提取 dotted objective_key，保存 SQLite study、trial 快照、best_params.yaml 和 study_summary.json。</p></div>
+      <pre>def train(config: dict, trial=None) -> dict:
+    # 可选 epoch 级剪枝：trial.report(value, epoch)
+    return {"valid": {"f1_macro": best_f1}}
+
+# YAML: objective_key: valid.f1_macro</pre>
+      <p class="note">Optuna 只搜索参数，不替代你的训练循环。最终模型必须用最佳参数重新训练，并单独记录最终结果。</p>
+    </section>
+
+    <section id="boundaries">
+      <h2>边界</h2>
+      <p>Gray 不提供通用 Web、模型、Dataset、loss、推理服务、患者 metadata 策略、Series 选择、DICOM 编码、临床标签规则。项目级语义必须留在项目仓库。</p>
+    </section>
+  </div>
+</main>
+<footer>Gray Medical Computing Laboratory · API Reference</footer>
+</body>
+</html>
