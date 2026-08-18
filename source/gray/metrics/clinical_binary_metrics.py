@@ -35,6 +35,8 @@ def clinical_binary_metrics(
     labels = sorted(set(y_true.tolist()) | set(y_pred.tolist()), key=str)
     negative = next(label for label in labels if label != positive)
     values = np.asarray(probabilities, dtype=float)
+    if values.ndim != 1 or values.shape[0] != y_true.size:
+        raise ValueError("probabilities must be a one-dimensional sequence aligned with targets")
     return {
         "positive_label": str(positive),
         "negative_label": str(negative),

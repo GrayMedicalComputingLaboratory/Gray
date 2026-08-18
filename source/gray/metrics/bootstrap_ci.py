@@ -27,7 +27,7 @@ def bootstrap_ci(targets: Sequence[Any], values: Sequence[Any], metric: Callable
         if value is not None and np.isfinite(value):
             estimates.append(float(value))
     if not estimates:
-        return {"estimate": None, "lower": None, "upper": None, "confidence": confidence, "bootstrap_samples": 0}
+        return {"estimate": None, "lower": None, "upper": None, "confidence": confidence, "bootstrap_samples": 0, "valid_bootstrap": 0}
     alpha = (1 - confidence) / 2
     point = metric(y_true, metric_values)
     return {
@@ -36,4 +36,5 @@ def bootstrap_ci(targets: Sequence[Any], values: Sequence[Any], metric: Callable
         "upper": float(np.quantile(estimates, 1 - alpha)),
         "confidence": confidence,
         "bootstrap_samples": len(estimates),
+        "valid_bootstrap": len(estimates),
     }
