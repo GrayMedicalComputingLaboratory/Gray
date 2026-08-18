@@ -7,10 +7,10 @@ from typing import Any
 import numpy as np
 
 
-def brier_score(targets: Sequence[Any], scores: Sequence[float] | Sequence[Sequence[float]] | np.ndarray, labels: Sequence[Any] | None = None) -> float | None:
+def brier_score(targets: Sequence[Any], probabilities: Sequence[float] | Sequence[Sequence[float]] | np.ndarray, labels: Sequence[Any] | None = None) -> float | None:
     """Return binary Brier score for the second label, or ``None`` when invalid."""
     y_true = np.asarray(list(targets), dtype=object)
-    values = np.asarray(scores, dtype=float)
+    values = np.asarray(probabilities, dtype=float)
     class_labels = list(labels) if labels is not None else sorted(set(y_true.tolist()), key=str)
     if (
         len(class_labels) != 2

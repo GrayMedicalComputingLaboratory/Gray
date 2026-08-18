@@ -31,33 +31,33 @@ def plot_roc_auc(
     it is not a pointwise curve band.
     """
     y = np.asarray(list(targets), dtype=object)
-    scores = np.asarray(probabilities, dtype=float)
-    if y.size == 0 or y.size != scores.size or not np.all(np.isfinite(scores)):
+    values = np.asarray(probabilities, dtype=float)
+    if y.size == 0 or y.size != values.size or not np.all(np.isfinite(values)):
         raise ValueError("targets and probabilities must be non-empty, aligned and finite")
     labels = sorted(set(y.tolist()), key=str)
     if positive_label is None:
         if len(labels) != 2:
             raise ValueError("positive_label is required unless exactly two labels are observed")
         positive_label = labels[-1]
-    if len(set(y.tolist())) != 2 or positive_label not in labels or np.any((scores < 0) | (scores > 1)):
+    if len(set(y.tolist())) != 2 or positive_label not in labels or np.any((values < 0) | (values > 1)):
         raise ValueError("ROC plotting requires two labels and probabilities in [0, 1]")
     truth = (y == positive_label).astype(int)
-    fpr, tpr, _ = roc_curve(truth, scores)
-    estimate = float(roc_auc_score(truth, scores))
+    fpr, tpr, _ = roc_curve(truth, values)
+    estimate = float(roc_auc_score(truth, values))
     legend = f"AUC = {estimate:.3f}"
     if ci:
         if n_bootstrap < 100 or not 0 < confidence < 1:
             raise ValueError("n_bootstrap must be at least 100 and confidence must be in (0, 1)")
         generator = np.random.default_rng(seed)
-        values: list[float] = []
+        bootstrap_values: list[float] = []
         for _ in range(n_bootstrap):
             index = generator.integers(0, y.size, y.size)
             if np.unique(truth[index]).size < 2:
                 continue
-            values.append(float(roc_auc_score(truth[index], scores[index])))
-        if values:
+            bootstrap_values.append(float(roc_auc_score(truth[index], values[index])))
+        if bootstrap_values:
             alpha = (1 - confidence) / 2
-            lower, upper = np.quantile(values, [alpha, 1 - alpha])
+            lower, upper = np.quantile(bootstrap_values, [alpha, 1 - alpha])
             legend += f" ({confidence:.0%} CI {lower:.3f}-{upper:.3f})"
     fig, axis = get_axes(ax)
     axis.plot(fpr, tpr, color="#6db8ea", lw=2, label=legend)

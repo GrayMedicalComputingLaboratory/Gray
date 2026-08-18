@@ -22,16 +22,16 @@ def plot_pr_curve(
 ) -> plt.Figure:
     """Plot a binary precision-recall curve and display average precision."""
     y = np.asarray(list(targets), dtype=object)
-    scores = np.asarray(probabilities, dtype=float)
+    values = np.asarray(probabilities, dtype=float)
     labels = sorted(set(y.tolist()), key=str)
-    if y.size == 0 or y.size != scores.size or len(labels) != 2 or not np.all(np.isfinite(scores)) or np.any((scores < 0) | (scores > 1)):
+    if y.size == 0 or y.size != values.size or len(labels) != 2 or not np.all(np.isfinite(values)) or np.any((values < 0) | (values > 1)):
         raise ValueError("PR plotting requires aligned binary targets and probabilities in [0, 1]")
     positive_label = labels[-1] if positive_label is None else positive_label
     if positive_label not in labels:
         raise ValueError("positive_label must be one of the observed labels")
     truth = (y == positive_label).astype(int)
-    precision, recall, _ = precision_recall_curve(truth, scores)
-    average_precision = float(average_precision_score(truth, scores))
+    precision, recall, _ = precision_recall_curve(truth, values)
+    average_precision = float(average_precision_score(truth, values))
     fig, axis = get_axes(ax)
     axis.plot(recall, precision, color="#72c48d", lw=2, label=f"AP = {average_precision:.3f}")
     axis.set(xlim=(0, 1), ylim=(0, 1), xlabel="Recall", ylabel="Precision", title="Precision-Recall Curve")

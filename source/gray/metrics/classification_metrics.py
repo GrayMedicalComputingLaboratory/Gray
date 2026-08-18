@@ -26,7 +26,7 @@ from .specificity_per_class import specificity_per_class
 def classification_metrics(
     targets: Sequence[Any],
     predictions: Sequence[Any],
-    scores: Sequence[float] | Sequence[Sequence[float]] | np.ndarray | None = None,
+    probabilities: Sequence[float] | Sequence[Sequence[float]] | np.ndarray | None = None,
     labels: Sequence[Any] | None = None,
 ) -> dict[str, Any]:
     """Combine independently callable metrics into one saved experiment report."""
@@ -54,13 +54,13 @@ def classification_metrics(
         "log_loss": None,
         "brier_score": None,
     }
-    if scores is None:
+    if probabilities is None:
         return result
-    result["roc_auc"] = roc_auc(y_true, scores, class_labels)
+    result["roc_auc"] = roc_auc(y_true, probabilities, class_labels)
     result["roc_auc_ovr_macro"] = result["roc_auc"]
-    result["pr_auc"] = pr_auc(y_true, scores, class_labels)
+    result["pr_auc"] = pr_auc(y_true, probabilities, class_labels)
     result["average_precision"] = result["pr_auc"]
-    result["log_loss"] = log_loss(y_true, scores, class_labels)
+    result["log_loss"] = log_loss(y_true, probabilities, class_labels)
     if len(class_labels) == 2:
-        result["brier_score"] = brier_score(y_true, scores, class_labels)
+        result["brier_score"] = brier_score(y_true, probabilities, class_labels)
     return result

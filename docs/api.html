@@ -95,17 +95,17 @@ python -m gray.cli tune --config configs/exp_00.yaml</pre>
     <section id="metrics">
       <h2>通用指标</h2>
       <p class="lead">每项指标均可独立导入；<code>classification_metrics</code> 只负责组合。</p>
-      <div class="api"><h3>输入约定与失败行为</h3><table><tr><th>targets / predictions</th><td>等长的一维序列；标签可为字符串或数字。长度不一致、空输入会抛出 <code>ValueError</code>。</td></tr><tr><th>scores / probabilities</th><td>二分类可传正类概率的一维序列；二分类二维矩阵必须为 <code>[n_samples, 2]</code>，并用 <code>labels=[negative, positive]</code> 明确列顺序；多分类矩阵列顺序必须与 <code>labels</code> 一致。</td></tr><tr><th>average</th><td><code>macro</code> 对每类等权；<code>weighted</code> 按 support 加权；不支持的值会抛出 <code>ValueError</code>。</td></tr><tr><th>single-class input</th><td>ROC-AUC、PR-AUC、校准相关指标无法定义时返回 <code>None</code>；二分类临床 helpers 要求 targets 实际包含两个声明类别。</td></tr></table></div>
+      <div class="api"><h3>输入约定与失败行为</h3><table><tr><th>targets / predictions</th><td>等长的一维序列；标签可为字符串或数字。长度不一致、空输入会抛出 <code>ValueError</code>。</td></tr><tr><th>probabilities</th><td>统一使用概率输入：二分类可传正类概率的一维序列；二维矩阵必须为 <code>[n_samples, 2]</code>，并用 <code>labels=[negative, positive]</code> 明确列顺序；多分类矩阵列顺序必须与 <code>labels</code> 一致。</td></tr><tr><th>average</th><td><code>macro</code> 对每类等权；<code>weighted</code> 按 support 加权；不支持的值会抛出 <code>ValueError</code>。</td></tr><tr><th>single-class input</th><td>ROC-AUC、PR-AUC、校准相关指标无法定义时返回 <code>None</code>；二分类临床 helpers 要求 targets 实际包含两个声明类别。</td></tr></table></div>
       <table><tr><th>函数</th><th>输入</th><th>输出</th></tr>
         <tr><td><code>accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
         <tr><td><code>balanced_accuracy</code></td><td>targets, predictions</td><td>float</td></tr>
         <tr><td><code>precision / recall / f1</code></td><td>targets, predictions, labels?, average?</td><td>float</td></tr>
         <tr><td><code>confusion_matrix</code></td><td>targets, predictions, labels?</td><td>整数二维列表</td></tr>
         <tr><td><code>specificity / specificity_per_class</code></td><td>targets, predictions, labels?</td><td>float / dict</td></tr>
-        <tr><td><code>roc_auc</code></td><td>targets, scores, labels?</td><td>float 或 None</td></tr>
-        <tr><td><code>pr_auc</code></td><td>targets, scores, labels?</td><td>float 或 None</td></tr>
+        <tr><td><code>roc_auc</code></td><td>targets, probabilities, labels?</td><td>float 或 None</td></tr>
+        <tr><td><code>pr_auc</code></td><td>targets, probabilities, labels?</td><td>float 或 None</td></tr>
         <tr><td><code>log_loss</code></td><td>targets, probabilities, labels</td><td>float 或 None</td></tr>
-        <tr><td><code>brier_score</code></td><td>targets, scores, labels</td><td>float 或 None</td></tr>
+        <tr><td><code>brier_score</code></td><td>targets, probabilities, labels?</td><td>float 或 None</td></tr>
       </table>
       <pre>from gray.metrics import accuracy, roc_auc, classification_metrics
 value = accuracy(targets, predictions)
