@@ -4,7 +4,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from copy import deepcopy
 import inspect
-from pathlib import Path
 from time import perf_counter
 from typing import Any
 
@@ -16,47 +15,25 @@ from rich.panel import Panel
 from rich.table import Table
 
 from gray.core.config import artifact_dir
+from gray.optuna.validation import resolve_storage, set_dotted_value, suggest_parameter, validate_options
 from gray.utils.io import write_json
 
 
 def run_optuna(config: dict[str, Any], train_once: Callable[..., dict[str, Any]]) -> dict[str, Any]:
     """Optimize one project's ``train_once`` callable from its single experiment YAML."""
-    options = config.get("optuna")
-    if not isinstance(options, dict):
-        raise ValueError("optuna must be a YAML mapping")
-    search_space = options.get("search_space")
-    if not isinstance(search_space, dict) or not search_space:
-        raise ValueError("optuna.search_space must be a non-empty mapping")
-    direction = options.get("direction", "maximize")
-    if direction not in {"maximize", "minimize"}:
-        raise ValueError("optuna.direction must be 'maximize' or 'minimize'")
-    objective_key = options.get("objective_key")
-    if not isinstance(objective_key, str) or not objective_key:
-        raise ValueError("optuna.objective_key must be a dotted result key, for example valid.f1_macro")
-    n_trials = int(options.get("n_trials", 20))
-    if n_trials < 1:
-        raise ValueError("optuna.n_trials must be positive")
+    settings = validate_options(config)
+    options = settings.options
+    search_space = settings.search_space
+    direction = settings.direction
+    objective_key = settings.objective_key
+    n_trials = settings.n_trials
     output_dir = artifact_dir(config, "optuna", create=True)
     trial_dir = output_dir / "trials"
     trial_dir.mkdir(parents=True, exist_ok=True)
-    study_name = str(options.get("study_name", f"{config['experiment_id']}_study"))
-    storage = options.get("storage")
-    if storage is None:
-        storage = f"sqlite:///{(output_dir / 'study.db').resolve().as_posix()}"
-    elif isinstance(storage, str) and "://" not in storage:
-        storage_path = Path(storage).expanduser()
-        if not storage_path.is_absolute():
-            storage_path = Path(config["_config_dir"]) / storage_path
-        storage = f"sqlite:///{storage_path.resolve().as_posix()}"
-    if not isinstance(storage, str):
-        raise ValueError("optuna.storage must be a SQLAlchemy URL or a SQLite file path")
-    seed = int(options.get("seed", config.get("runtime", {}).get("seed", 42)))
-    sampler_name = str(options.get("sampler", "tpe")).lower()
-    sampler = optuna.samplers.TPESampler(seed=seed, multivariate=True) if sampler_name == "tpe" else optuna.samplers.RandomSampler(seed=seed)
-    pruner_name = str(options.get("pruner", "median")).lower()
-    pruner = optuna.pruners.MedianPruner() if pruner_name == "median" else optuna.pruners.NopPruner()
-    if sampler_name not in {"tpe", "random"} or pruner_name not in {"median", "none"}:
-        raise ValueError("optuna.sampler must be tpe/random and optuna.pruner must be median/none")
+    study_name = settings.study_name
+    storage = resolve_storage(config, output_dir, options.get("storage"))
+    sampler = optuna.samplers.TPESampler(seed=settings.seed, multivariate=True) if settings.sampler_name == "tpe" else optuna.samplers.RandomSampler(seed=settings.seed)
+    pruner = optuna.pruners.MedianPruner() if settings.pruner_name == "median" else optuna.pruners.NopPruner()
     optuna.logging.set_verbosity(optuna.logging.WARNING)
     study = optuna.create_study(
         study_name=study_name,
@@ -82,30 +59,8 @@ def run_optuna(config: dict[str, Any], train_once: Callable[..., dict[str, Any]]
         trial_config["experiment_id"] = f"{config['experiment_id']}__trial_{trial.number:04d}"
         trial_config["optuna"] = {**options, "enabled": False, "trial_number": trial.number}
         for dotted_key, specification in search_space.items():
-            if not isinstance(dotted_key, str) or not isinstance(specification, dict):
-                raise ValueError("each optuna.search_space entry must be a dotted key and mapping")
-            kind = specification.get("type")
-            if kind == "float":
-                value = trial.suggest_float(dotted_key, float(specification["low"]), float(specification["high"]), log=bool(specification.get("log", False)), step=specification.get("step"))
-            elif kind == "int":
-                value = trial.suggest_int(dotted_key, int(specification["low"]), int(specification["high"]), log=bool(specification.get("log", False)), step=int(specification.get("step", 1)))
-            elif kind == "categorical":
-                choices = specification.get("choices")
-                if not isinstance(choices, list) or not choices:
-                    raise ValueError(f"optuna.search_space.{dotted_key}.choices must be non-empty")
-                value = trial.suggest_categorical(dotted_key, choices)
-            else:
-                raise ValueError(f"optuna.search_space.{dotted_key}.type must be float, int or categorical")
-            cursor: dict[str, Any] = trial_config
-            parts = dotted_key.split(".")
-            for part in parts[:-1]:
-                child = cursor.get(part)
-                if not isinstance(child, dict):
-                    raise KeyError(f"search-space key does not exist in config: {dotted_key}")
-                cursor = child
-            if parts[-1] not in cursor:
-                raise KeyError(f"search-space key does not exist in config: {dotted_key}")
-            cursor[parts[-1]] = value
+            value = suggest_parameter(trial, dotted_key, specification)
+            set_dotted_value(trial_config, dotted_key, value)
         snapshot = trial_dir / f"trial_{trial.number:04d}.yaml"
         OmegaConf.save(config=OmegaConf.create(trial_config), f=snapshot)
         console.print(f"[bold bright_blue]TRIAL {trial.number:04d} START[/]  {trial.params}")
@@ -146,11 +101,7 @@ def run_optuna(config: dict[str, Any], train_once: Callable[..., dict[str, Any]]
     best = study.best_trial
     best_config = deepcopy(config)
     for dotted_key, value in best.params.items():
-        cursor: dict[str, Any] = best_config
-        parts = dotted_key.split(".")
-        for part in parts[:-1]:
-            cursor = cursor[part]
-        cursor[parts[-1]] = value
+        set_dotted_value(best_config, dotted_key, value)
     best_config["optuna"] = {**options, "enabled": False, "best_trial": best.number}
     OmegaConf.save(config=OmegaConf.create(best_config), f=output_dir / "best_params.yaml")
     summary: dict[str, Any] = {
