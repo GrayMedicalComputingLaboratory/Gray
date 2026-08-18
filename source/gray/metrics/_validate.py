@@ -9,8 +9,10 @@ import numpy as np
 
 def validate_targets_predictions(targets: Sequence[Any], predictions: Sequence[Any]) -> tuple[np.ndarray, np.ndarray]:
     """Return aligned, non-empty target and prediction arrays."""
-    y_true = np.asarray(list(targets), dtype=object)
-    y_pred = np.asarray(list(predictions), dtype=object)
+    # Preserve homogeneous numeric/string labels so scikit-learn can infer the
+    # target type (``dtype=object`` is rejected by newer scikit-learn releases).
+    y_true = np.asarray(list(targets))
+    y_pred = np.asarray(list(predictions))
     if y_true.size == 0 or y_true.shape != y_pred.shape:
         raise ValueError("targets and predictions must be non-empty and aligned")
     return y_true, y_pred

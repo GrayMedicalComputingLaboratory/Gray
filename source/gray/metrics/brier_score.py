@@ -12,7 +12,17 @@ def brier_score(targets: Sequence[Any], scores: Sequence[float] | Sequence[Seque
     y_true = np.asarray(list(targets), dtype=object)
     values = np.asarray(scores, dtype=float)
     class_labels = list(labels)
-    if len(class_labels) != 2 or y_true.size == 0 or values.ndim not in (1, 2) or values.shape[0] != y_true.size:
+    if (
+        len(class_labels) != 2
+        or len(set(class_labels)) != 2
+        or y_true.size == 0
+        or values.ndim not in (1, 2)
+        or values.shape[0] != y_true.size
+        or (values.ndim == 2 and values.shape[1] != 2)
+        or not np.all(np.isfinite(values))
+    ):
         return None
     positive = values if values.ndim == 1 else values[:, 1]
+    if np.any((positive < 0) | (positive > 1)):
+        return None
     return float(np.mean((positive - (y_true == class_labels[1]).astype(int)) ** 2))

@@ -9,8 +9,8 @@ import numpy as np
 
 def binary_predictions(targets: Sequence[Any], predictions: Sequence[Any], positive_label: Any | None = None) -> tuple[np.ndarray, np.ndarray, Any]:
     """Return aligned binary target/prediction labels and positive label."""
-    y_true = np.asarray(list(targets), dtype=object)
-    y_pred = np.asarray(list(predictions), dtype=object)
+    y_true = np.asarray(list(targets))
+    y_pred = np.asarray(list(predictions))
     if y_true.size == 0 or y_true.shape != y_pred.shape:
         raise ValueError("targets and predictions must be non-empty and aligned")
     true_labels = set(y_true.tolist())

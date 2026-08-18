@@ -10,6 +10,8 @@ def resolve_device(value: str | int) -> str:
         value = "cuda:0"
     if isinstance(value, str) and value.startswith("cuda:"):
         value = value.removeprefix("cuda:")
+    if isinstance(value, bool):
+        raise ValueError("device must be 'cpu', 'cuda', 'cuda:N', or a non-negative GPU index")
     if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
         index = int(value)
         if index < 0:

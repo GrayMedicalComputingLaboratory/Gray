@@ -9,7 +9,7 @@ import numpy as np
 
 def binary_inputs(targets: Sequence[Any], scores: Sequence[float] | np.ndarray, positive_label: Any | None = None, labels: Sequence[Any] | None = None) -> tuple[np.ndarray, np.ndarray, Any]:
     """Return binary targets, one-dimensional positive scores and positive label."""
-    y_true = np.asarray(list(targets), dtype=object)
+    y_true = np.asarray(list(targets))
     values = np.asarray(scores, dtype=float)
     if y_true.size == 0 or values.ndim not in (1, 2) or values.shape[0] != y_true.size:
         raise ValueError("targets and scores must be non-empty and aligned")
