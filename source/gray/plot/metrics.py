@@ -7,7 +7,7 @@ from typing import Any
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ._common import finish_figure, get_axes
+from ._common import SavePath, finish_figure, get_axes
 
 
 def plot_metrics(
@@ -17,7 +17,7 @@ def plot_metrics(
     title: str = "Classification Metrics",
     ylim: tuple[float, float] | None = (0.0, 1.0),
     ax: Any = None,
-    save_path: str | None = None,
+    save_path: SavePath | None = None,
     dpi: int = 180,
 ) -> plt.Figure:
     """Plot scalar metrics with optional asymmetric confidence intervals.
@@ -40,6 +40,8 @@ def plot_metrics(
             if not bound or bound.get("lower") is None or bound.get("upper") is None:
                 continue
             lower, upper = float(bound["lower"]), float(bound["upper"])
+            if not np.isfinite(lower) or not np.isfinite(upper) or lower > values[position] or upper < values[position]:
+                raise ValueError(f"ci bounds for {name!r} must contain the metric estimate")
             axis.errorbar(position, values[position], yerr=[[values[position] - lower], [upper - values[position]]], fmt="none", ecolor="#e1b75d", capsize=4, capthick=1.5)
     axis.set(xticks=positions, xticklabels=names, ylabel="Score", title=title)
     axis.tick_params(axis="x", rotation=35)

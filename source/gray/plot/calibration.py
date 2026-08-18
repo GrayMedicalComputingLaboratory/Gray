@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 
 from gray.metrics.calibration_curve import calibration_curve
 
-from ._common import finish_figure, get_axes
+from ._common import SavePath, finish_figure, get_axes
 
 
-def plot_calibration_curve(targets: Sequence[Any], probabilities: Sequence[float], positive_label: Any | None = None, *, n_bins: int = 10, ax: Any = None, save_path: str | None = None, dpi: int = 180) -> plt.Figure:
+def plot_calibration_curve(targets: Sequence[Any], probabilities: Sequence[float], positive_label: Any | None = None, *, n_bins: int = 10, ax: Any = None, save_path: SavePath | None = None, dpi: int = 180) -> plt.Figure:
     """Plot mean predicted probability against observed positive rate."""
     report = calibration_curve(targets, probabilities, positive_label, n_bins)
     points = report["points"]

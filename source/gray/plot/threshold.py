@@ -8,10 +8,10 @@ import matplotlib.pyplot as plt
 
 from gray.metrics.threshold_report import threshold_report
 
-from ._common import finish_figure, get_axes
+from ._common import SavePath, finish_figure, get_axes
 
 
-def plot_threshold_report(targets: Sequence[Any], probabilities: Sequence[float], positive_label: Any | None = None, *, thresholds: Sequence[float] | None = None, ax: Any = None, save_path: str | None = None, dpi: int = 180) -> plt.Figure:
+def plot_threshold_report(targets: Sequence[Any], probabilities: Sequence[float], positive_label: Any | None = None, *, thresholds: Sequence[float] | None = None, ax: Any = None, save_path: SavePath | None = None, dpi: int = 180) -> plt.Figure:
     """Plot sensitivity, specificity, PPV, NPV and F1 across thresholds."""
     report = threshold_report(targets, probabilities, positive_label, thresholds)
     rows = report["rows"]

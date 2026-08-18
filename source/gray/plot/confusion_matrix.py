@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import confusion_matrix as sklearn_confusion_matrix
 
-from ._common import finish_figure, get_axes
+from ._common import SavePath, finish_figure, get_axes
 
 
 def plot_confusion_matrix(
@@ -20,7 +20,7 @@ def plot_confusion_matrix(
     cmap: str = "Blues",
     annotate: bool = True,
     ax: Any = None,
-    save_path: str | None = None,
+    save_path: SavePath | None = None,
     dpi: int = 180,
 ) -> plt.Figure:
     """Plot a label-ordered confusion matrix and return its Figure.
@@ -34,6 +34,8 @@ def plot_confusion_matrix(
     ordered = list(labels) if labels is not None else sorted(set(y_true) | set(y_pred), key=str)
     if not ordered:
         raise ValueError("labels must not be empty")
+    if len(set(ordered)) != len(ordered):
+        raise ValueError("labels must not contain duplicates")
     matrix = sklearn_confusion_matrix(y_true, y_pred, labels=ordered).astype(float)
     values = matrix / matrix.sum(axis=1, keepdims=True) if normalize else matrix
     values = np.nan_to_num(values)

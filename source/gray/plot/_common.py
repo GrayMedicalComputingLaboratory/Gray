@@ -2,13 +2,24 @@
 from __future__ import annotations
 
 from pathlib import Path
+from os import PathLike
 from typing import Any
 
 import matplotlib.pyplot as plt
 
 
-def finish_figure(fig: plt.Figure, save_path: str | Path | None, dpi: int) -> plt.Figure:
+SavePath = str | PathLike[str] | Path
+
+
+def validate_dpi(dpi: int) -> None:
+    """Validate one positive integer output resolution."""
+    if isinstance(dpi, bool) or not isinstance(dpi, int) or dpi <= 0:
+        raise ValueError("dpi must be a positive integer")
+
+
+def finish_figure(fig: plt.Figure, save_path: SavePath | None, dpi: int) -> plt.Figure:
     """Tighten and optionally save a figure without closing the caller's figure."""
+    validate_dpi(dpi)
     fig.tight_layout()
     if save_path is not None:
         path = Path(save_path).expanduser()

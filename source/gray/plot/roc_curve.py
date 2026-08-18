@@ -6,9 +6,9 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import auc, roc_auc_score, roc_curve
+from sklearn.metrics import roc_auc_score, roc_curve
 
-from ._common import finish_figure, get_axes
+from ._common import SavePath, finish_figure, get_axes
 
 
 def plot_roc_auc(
@@ -21,7 +21,7 @@ def plot_roc_auc(
     confidence: float = 0.95,
     seed: int = 42,
     ax: Any = None,
-    save_path: str | None = None,
+    save_path: SavePath | None = None,
     dpi: int = 180,
 ) -> plt.Figure:
     """Plot a binary ROC curve, optionally with a bootstrap AUC CI.
