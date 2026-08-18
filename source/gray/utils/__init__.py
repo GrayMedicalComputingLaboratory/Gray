@@ -1,6 +1,6 @@
 """Stable convenience imports for single-responsibility utility modules."""
 
-from .artifacts import read_json, write_json
+from .io import read_json, write_json
 from .logging import get_logger
 from .seed_everything import seed_everything
 from .seed_worker import seed_worker
