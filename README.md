@@ -91,30 +91,6 @@ variants = tta(
 logits = [model(variant) for variant in variants.values()]
 ```
 
-## Optuna 搜索
-
-在同一实验 YAML 中添加 `optuna` 配置。`enabled: true` 时 `gray train` 自动搜索，`gray tune` 是显式别名。
-Gray 保存 SQLite study、trial 快照、最佳参数和 summary。
-
-```yaml
-optuna:
-  enabled: true
-  study_name: exp_001_search
-  direction: maximize
-  objective_key: valid.f1_macro
-  n_trials: 30
-  seed: 42
-  sampler: tpe
-  pruner: median
-  final_train: true
-  search_space:
-    train.lr:
-      type: float
-      low: 0.000001
-      high: 0.0003
-      log: true
-```
-
 ## DICOM 处理
 
 可选的 `gray.dicom` 模块只使用 SimpleITK。项目负责 Series 选择和文件排序，Gray 负责像素强度与空间处理。
@@ -230,10 +206,6 @@ variants = tta(volume, dim="3d", horizontal_flip=True,
                rotate90_angles=[0, 90, 180, 270])
 logits = [model(variant) for variant in variants.values()]
 ```
-
-## Optuna Search
-
-Add an `optuna` section to the same experiment YAML. `gray train` searches when `enabled: true`; `gray tune` is the explicit alias. Gray saves the SQLite study, trial snapshots, best parameters and summary.
 
 ## DICOM Processing
 

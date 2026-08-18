@@ -52,7 +52,6 @@
     <a href="#tta">TTA</a>
     <a href="#plot">Plot</a>
     <a href="#dicom">DICOM / SimpleITK</a>
-    <a href="#optuna">Optuna</a>
     <a href="#boundaries">边界</a>
   </nav>
   <div>
@@ -73,8 +72,8 @@
       </div>
       <pre>python -m gray.cli train --config configs/exp_00.yaml
 python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.00003
-python -m gray.cli tune --config configs/exp_00.yaml</pre>
-      <p><code>train</code> 在 <code>optuna.enabled: true</code> 时自动搜索；<code>tune</code> 强制搜索。项目 entrypoint 需返回字典。</p>
+      </pre>
+      <p>项目 entrypoint 需返回字典，Gray 将其写入对应 stage 的 summary.json。</p>
       <div class="api"><h3><code>gray.core.config.resolve_path</code></h3><p><code>resolve_path(config, value) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>config</code> 必须包含 <code>_config_dir</code>；相对路径从 YAML 所在目录解析，绝不依赖当前工作目录。</td></tr><tr><th>Returns</th><td>绝对路径；传入绝对路径时保持其语义。</td></tr></table></div>
       <div class="api"><h3><code>gray.core.config.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>stage</code> 只能是相对单级目录名，不能为空、绝对路径或包含 <code>..</code>；<code>create=True</code> 时创建目录。</td></tr><tr><th>Returns</th><td><code>output_root / experiment_id / stage</code>。</td></tr><tr><th>Raises</th><td>非法 stage 时抛出 <code>ValueError</code>。</td></tr></table></div>
       <div class="api"><h3><code>gray.core.device.resolve_device</code></h3><p><code>resolve_device(value: str | int) -&gt; str</code></p><table><tr><th>Accepted</th><td><code>"cpu"</code>、<code>"cuda"</code>、<code>"cuda:N"</code> 或非负 GPU 索引。</td></tr><tr><th>Returns</th><td>规范化设备名，例如 <code>cuda:0</code>。</td></tr><tr><th>Raises</th><td>设备格式错误抛出 <code>ValueError</code>；请求的 CUDA 不存在抛出 <code>RuntimeError</code>，不会静默回退 CPU。</td></tr></table></div>
@@ -174,18 +173,6 @@ image = apply_window_level(image, 400, 40)
 image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series</th><td>要求调用方已经完成 Series 选择和文件排序；空列表或缺失文件会抛出异常。</td></tr><tr><th>apply_rescale</th><td>从 tags <code>0028|1053</code> / <code>0028|1052</code> 读取 slope/intercept，slope 为 0 时拒绝处理。</td></tr><tr><th>apply_window_level</th><td><code>lower=center-width/2</code>、<code>upper=center+width/2</code>，再映射到 <code>[output_min, output_max]</code>。</td></tr><tr><th>resample_volume</th><td>支持 <code>nearest</code>、<code>linear</code>、<code>bspline</code>；保持 origin 和 direction，并按物理范围计算新尺寸。</td></tr></table></div>
     </section>
 
-    <section id="optuna">
-      <h2>Optuna</h2>
-      <div class="api green"><h3><code>gray.optuna.run_optuna</code></h3><p><code>run_optuna(config, train_once) -&gt; dict</code></p><p>从同一份 YAML 读取 search_space，复制配置、调用项目 train_once、提取 dotted objective_key，保存 SQLite study、trial 快照、best_params.yaml 和 study_summary.json。</p></div>
-      <div class="api green"><h3>run_optuna 输入输出契约</h3><table class="contract"><tr><th>输入</th><th>支持类型</th><th>要求</th></tr><tr><td><code>config</code></td><td><span class="type">dict[str, Any]</span></td><td>包含 <code>optuna</code> mapping、<code>experiment_id</code>、<code>project.output_root</code> 和 <code>_config_dir</code>。</td></tr><tr><td><code>train_once</code></td><td><span class="type">Callable</span></td><td>接受 <code>config</code>；可选接受 <code>trial</code>；必须返回嵌套 metrics 字典。</td></tr><tr><td>返回值</td><td><span class="type">dict[str, Any]</span></td><td>含 <code>best_trial</code>、<code>best_value</code>、<code>best_params</code>、trial 统计和 storage。</td></tr><tr><td>失败条件</td><td>—</td><td>空 search_space、无效 direction、无效 objective_key、无完成 trial 或不可转为有限 float 的 objective 会抛出异常。</td></tr></table></div>
-      <pre>def train(config: dict, trial=None) -> dict:
-    # 可选 epoch 级剪枝：trial.report(value, epoch)
-    return {"valid": {"f1_macro": best_f1}}
-
-# YAML: objective_key: valid.f1_macro</pre>
-      <p class="note">Optuna 只搜索参数，不替代你的训练循环。最终模型必须用最佳参数重新训练，并单独记录最终结果。</p>
-      <div class="api"><h3>search_space 支持类型</h3><table><tr><th><code>float</code></th><td><code>low</code>、<code>high</code>，可选 <code>log</code>、<code>step</code>。</td></tr><tr><th><code>int</code></th><td><code>low</code>、<code>high</code>，可选 <code>log</code>、<code>step</code>。</td></tr><tr><th><code>categorical</code></th><td>非空 <code>choices</code> 列表。</td></tr><tr><th>Artifacts</th><td><code>optuna/study.db</code>、每个 trial 的 YAML/JSON、<code>best_params.yaml</code> 和 <code>study_summary.json</code>。</td></tr><tr><th>train_once</th><td>必须返回字典；<code>objective_key</code> 用点号路径提取，例如 <code>valid.f1_macro</code>。可选接收 <code>trial</code> 进行 pruning。</td></tr></table></div>
-    </section>
 
     <section id="boundaries">
       <h2>边界</h2>
@@ -200,7 +187,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
     var entries = Array.prototype.slice.call(document.querySelectorAll(".api"));
     var sections = Array.prototype.slice.call(document.querySelectorAll("main > div > section"));
     var root = "https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/";
-    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.plot":"plot/", "gray.optuna":"optuna/run_optuna.py"};
+    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.plot":"plot/"};
     document.querySelectorAll(".api h3 code").forEach(function (label) {
       var name = label.textContent.trim();
       var path = null;
@@ -208,7 +195,6 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
         if (name.indexOf(prefix) !== 0) return false;
         var rest = name.slice(prefix.length).replace(/^\./, "").split(/\s|\//)[0];
         if (prefix === "gray.utils" || prefix === "gray.dicom" || prefix === "gray.metrics" || prefix === "gray.plot") path = paths[prefix] + rest + ".py";
-        else if (prefix === "gray.optuna") path = paths[prefix];
         else path = paths[prefix];
         return true;
       });
