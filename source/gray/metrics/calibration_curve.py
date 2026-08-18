@@ -9,11 +9,11 @@ import numpy as np
 from ._binary import binary_inputs
 
 
-def calibration_curve(targets: Sequence[Any], probabilities: Sequence[float] | np.ndarray, positive_label: Any | None = None, n_bins: int = 10) -> dict[str, Any]:
+def calibration_curve(targets: Sequence[Any], probabilities: Sequence[float] | np.ndarray, positive_label: Any | None = None, n_bins: int = 10, labels: Sequence[Any] | None = None) -> dict[str, Any]:
     """Return reliability-curve points, expected calibration error and Brier score."""
     if n_bins < 2:
         raise ValueError("n_bins must be at least 2")
-    y_true, values, positive = binary_inputs(targets, probabilities, positive_label)
+    y_true, values, positive = binary_inputs(targets, probabilities, positive_label, labels)
     if not np.all(np.isfinite(values)) or np.any((values < 0) | (values > 1)):
         raise ValueError("probabilities must be finite values in [0, 1]")
     binary_target = (y_true == positive).astype(int)

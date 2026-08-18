@@ -47,7 +47,7 @@ def clinical_binary_metrics(
         "npv": npv(y_true, y_pred, positive),
         "roc_auc": roc_auc(y_true, values, [negative, positive]),
         "pr_auc": pr_auc(y_true, values, [negative, positive]),
-        "calibration": calibration_curve(y_true, values, positive, n_bins),
+        "calibration": calibration_curve(y_true, values, positive, n_bins, [negative, positive]),
         "confidence_intervals": {
             "sensitivity": bootstrap_ci(y_true, y_pred, lambda target, prediction: sensitivity(target, prediction, positive), n_bootstrap, confidence, seed),
             "specificity": bootstrap_ci(y_true, y_pred, lambda target, prediction: binary_specificity(target, prediction, positive), n_bootstrap, confidence, seed),
@@ -56,5 +56,5 @@ def clinical_binary_metrics(
             "roc_auc": bootstrap_ci(y_true, values, lambda target, score: roc_auc(target, score.astype(float), [negative, positive]), n_bootstrap, confidence, seed),
             "pr_auc": bootstrap_ci(y_true, values, lambda target, score: pr_auc(target, score.astype(float), [negative, positive]), n_bootstrap, confidence, seed),
         },
-        "threshold_report": threshold_report(y_true, values, positive, thresholds),
+        "threshold_report": threshold_report(y_true, values, positive, thresholds, [negative, positive]),
     }

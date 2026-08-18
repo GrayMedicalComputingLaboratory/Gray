@@ -8,9 +8,10 @@ from rich.logging import RichHandler
 
 
 def get_logger(name: str, output_dir: Path) -> logging.Logger:
-    """Return a non-propagating logger writing both console and ``run.log``."""
+    """Return an isolated console/file logger for one output directory."""
+    output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(f"{name}:{output_dir}")
     logger.setLevel(logging.INFO)
     logger.propagate = False
     if not logger.handlers:

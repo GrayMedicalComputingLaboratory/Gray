@@ -9,7 +9,12 @@ from .get_spacing import get_spacing
 
 
 def resample_volume(image: sitk.Image, target_spacing: Sequence[float], interpolator: str = "linear", default_value: float = 0.0) -> sitk.Image:
-    """Resample while preserving physical extent, origin and direction."""
+    """Resample while preserving geometry and using a safe output pixel type.
+
+    Nearest-neighbour output keeps the input pixel type, which is appropriate
+    for masks and labels. Linear and B-spline interpolation return float32 so
+    fractional interpolated intensities are not quantized back to integers.
+    """
     if not isinstance(image, sitk.Image):
         raise TypeError("image must be a SimpleITK Image")
     source_spacing = get_spacing(image)
@@ -25,6 +30,7 @@ def resample_volume(image: sitk.Image, target_spacing: Sequence[float], interpol
         raise ValueError("interpolator must be nearest, linear or bspline")
     source_size = image.GetSize()
     target_size = [max(1, int(round(size * old / new))) for size, old, new in zip(source_size, source_spacing, spacing)]
+    output_pixel_id = image.GetPixelID() if interpolator == "nearest" else sitk.sitkFloat32
     return sitk.Resample(
         image,
         target_size,
@@ -34,5 +40,5 @@ def resample_volume(image: sitk.Image, target_spacing: Sequence[float], interpol
         spacing,
         image.GetDirection(),
         float(default_value),
-        image.GetPixelID(),
+        output_pixel_id,
     )

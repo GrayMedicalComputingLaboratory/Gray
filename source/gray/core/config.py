@@ -40,7 +40,8 @@ def resolve_path(config: dict[str, Any], value: str | Path) -> Path:
 
 def artifact_dir(config: dict[str, Any], stage: str, create: bool = False) -> Path:
     """Return ``output_root/<experiment_id>/<stage>`` for one isolated experiment."""
-    if not stage or Path(stage).is_absolute() or ".." in Path(stage).parts:
+    stage_path = Path(stage)
+    if not stage or stage_path.is_absolute() or stage_path.name != stage or stage in {".", ".."}:
         raise ValueError(f"invalid artifact stage: {stage!r}")
     output_root = resolve_path(config, config["project"]["output_root"])
     path = output_root / config["experiment_id"] / stage

@@ -52,6 +52,7 @@ def classification_metrics(
         "pr_auc": None,
         "average_precision": None,
         "log_loss": None,
+        "brier_score": None,
     }
     if scores is None:
         return result

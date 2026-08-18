@@ -12,4 +12,6 @@ def resolve_labels(y_true: np.ndarray, y_pred: np.ndarray, labels: Sequence[Any]
     class_labels = list(labels) if labels is not None else sorted(set(y_true.tolist()) | set(y_pred.tolist()), key=str)
     if not class_labels:
         raise ValueError("at least one class label is required")
+    if len(set(class_labels)) != len(class_labels):
+        raise ValueError("labels must not contain duplicates")
     return class_labels

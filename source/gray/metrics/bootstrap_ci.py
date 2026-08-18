@@ -19,7 +19,11 @@ def bootstrap_ci(targets: Sequence[Any], values: Sequence[Any], metric: Callable
     estimates: list[float] = []
     for _ in range(n_bootstrap):
         index = generator.integers(0, y_true.size, size=y_true.size)
-        value = metric(y_true[index], metric_values[index])
+        try:
+            value = metric(y_true[index], metric_values[index])
+        except ValueError:
+            # A resample may contain only one class; that metric is undefined.
+            value = None
         if value is not None and np.isfinite(value):
             estimates.append(float(value))
     if not estimates:

@@ -8,8 +8,12 @@ import numpy as np
 
 
 def seed_everything(seed: int, deterministic: bool = True) -> None:
-    """Seed Python, NumPy, PyTorch and CUDA when those runtimes are available."""
-    os.environ["PYTHONHASHSEED"] = str(seed)
+    """Seed available runtimes; set ``PYTHONHASHSEED`` before startup for hashes.
+
+    The environment variable is exported for child processes, but changing it
+    here cannot change the already-running interpreter's hash randomization.
+    """
+    os.environ.setdefault("PYTHONHASHSEED", str(seed))
     if deterministic:
         os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     random.seed(seed)
