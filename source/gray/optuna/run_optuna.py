@@ -16,7 +16,7 @@ from rich.table import Table
 
 from gray.core.config import artifact_dir
 from gray.optuna.validation import resolve_storage, set_dotted_value, suggest_parameter, validate_options
-from gray.utils.io import write_json
+from gray.utils.artifacts import write_json
 
 
 def run_optuna(config: dict[str, Any], train_once: Callable[..., dict[str, Any]]) -> dict[str, Any]:

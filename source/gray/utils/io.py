@@ -1,12 +1,5 @@
-"""Small, explicit artifact serialization helpers."""
-from __future__ import annotations
+"""Backward-compatible aliases for artifact serialization."""
 
-import json
-from pathlib import Path
-from typing import Any
+from .artifacts import read_json, write_json
 
-
-def write_json(path: Path, value: dict[str, Any]) -> None:
-    """Write a UTF-8 JSON artifact, creating only its parent directory."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
+__all__ = ["read_json", "write_json"]

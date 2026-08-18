@@ -11,7 +11,7 @@ from rich.pretty import Pretty
 
 from gray.core.config import artifact_dir, load_config
 from gray.optuna import run_optuna
-from gray.utils.io import write_json
+from gray.utils.artifacts import write_json
 
 
 def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, Any]], Any]:

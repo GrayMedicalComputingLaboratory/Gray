@@ -153,7 +153,7 @@ report = clinical_binary_metrics(
 
 ## 绘图
 
-`gray.plot` 提供混淆矩阵、指标与置信区间、ROC-AUC、PR 曲线、校准曲线、阈值分析和训练曲线。所有绘图函数返回 Matplotlib `Figure`，可通过 `save_path` 保存。
+`gray.plot` 提供混淆矩阵、指标与置信区间、ROC-AUC、PR 曲线、校准曲线和阈值分析。所有绘图函数返回 Matplotlib `Figure`，可通过 `save_path` 保存。
 
 ```python
 from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
@@ -247,7 +247,7 @@ Gray supports accuracy, balanced accuracy, precision, recall, F1, confusion matr
 
 ## Plotting
 
-`gray.plot` provides confusion matrices, metric bars with confidence intervals, ROC-AUC, precision-recall, calibration, threshold and training-history plots. Every plotting function returns a Matplotlib `Figure` and can save through `save_path`.
+`gray.plot` provides confusion matrices, metric bars with confidence intervals, ROC-AUC, precision-recall, calibration and threshold plots. Every plotting function returns a Matplotlib `Figure` and can save through `save_path`.
 
 ## Boundaries
 
