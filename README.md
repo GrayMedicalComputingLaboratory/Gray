@@ -151,6 +151,22 @@ report = clinical_binary_metrics(
 
 临床报告要求观测到两个类别；单类别 fold 应使用通用 classification metrics。
 
+## 绘图
+
+`gray.plot` 提供混淆矩阵、指标与置信区间、ROC-AUC、PR 曲线、校准曲线、阈值分析和训练曲线。所有绘图函数返回 Matplotlib `Figure`，可通过 `save_path` 保存。
+
+```python
+from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
+
+plot_confusion_matrix(targets, predictions, labels=["Non-BCC", "BCC"],
+                      normalize=True, save_path="figures/confusion_matrix.png")
+plot_roc_auc(targets, probabilities, positive_label="BCC", ci=True,
+             n_bootstrap=2_000, save_path="figures/roc_auc.png")
+plot_metrics({"f1_macro": 0.82, "roc_auc": 0.89},
+             ci={"roc_auc": {"lower": 0.81, "upper": 0.95}},
+             save_path="figures/metrics.png")
+```
+
 ## 边界
 
 Gray 不规定通用图像 CSV、模型基类、loss、Web UI、推理服务、3D loader 或患者 metadata 策略。只有至少两个独立项目需要相同且稳定的行为时，才应将代码提升到 Gray。
@@ -228,6 +244,10 @@ The optional `gray.dicom` module uses SimpleITK only. The project selects and or
 Gray supports accuracy, balanced accuracy, precision, recall, F1, confusion matrices, specificity, sensitivity, PPV, NPV, ROC-AUC, PR-AUC, log loss, Brier score, calibration curves, bootstrap confidence intervals and threshold reports.
 
 `clinical_binary_metrics` requires both observed classes. Use the general classification metrics for a single-class fold diagnostic.
+
+## Plotting
+
+`gray.plot` provides confusion matrices, metric bars with confidence intervals, ROC-AUC, precision-recall, calibration, threshold and training-history plots. Every plotting function returns a Matplotlib `Figure` and can save through `save_path`.
 
 ## Boundaries
 

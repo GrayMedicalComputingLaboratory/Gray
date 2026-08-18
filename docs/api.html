@@ -50,6 +50,7 @@
     <a href="#metrics">通用指标</a>
     <a href="#clinical">临床二分类</a>
     <a href="#tta">TTA</a>
+    <a href="#plot">Plot</a>
     <a href="#dicom">DICOM / SimpleITK</a>
     <a href="#optuna">Optuna</a>
     <a href="#boundaries">边界</a>
@@ -133,6 +134,27 @@ logits = [model(value) for value in variants.values()]</pre>
       <p>返回键包括 <code>original</code>、<code>horizontal_flip</code>、<code>vertical_flip</code>、<code>rotate90_90</code> 等。Gray 只生成变体，预测如何聚合由项目决定。</p>
     </section>
 
+    <section id="plot">
+      <h2>gray.plot</h2>
+      <p class="lead">可复用评估与训练曲线。所有函数返回 <code>matplotlib.figure.Figure</code>，支持传入 <code>ax</code> 嵌入现有布局，并通过 <code>save_path</code> 自动创建目录并保存 PNG、PDF 或 SVG。</p>
+      <div class="api"><h3><code>gray.plot.plot_confusion_matrix</code></h3><p><code>plot_confusion_matrix(targets, predictions, labels=None, *, normalize=False, cmap="Blues", annotate=True, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><table class="contract"><tr><th>输入</th><td><span class="type">Sequence[Any]</span> targets、predictions；可选固定顺序 <span class="type">Sequence[Any]</span> labels。</td></tr><tr><th>选项</th><td><code>normalize=True</code> 使用每个真实类别行归一化比例；<code>annotate</code> 控制格内数值；<code>cmap</code> 为 Matplotlib colormap 名称。</td></tr><tr><th>输出</th><td><span class="type">Figure</span>；标签不对齐或输入为空抛出 <code>ValueError</code>。</td></tr></table></div>
+      <div class="api"><h3><code>gray.plot.plot_metrics</code></h3><p><code>plot_metrics(metrics, ci=None, *, title="Classification Metrics", ylim=(0.0, 1.0), ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><table class="contract"><tr><th>metrics</th><td><span class="type">Mapping[str, float]</span>，如 <code>{"f1_macro": 0.82, "roc_auc": 0.89}</code>。</td></tr><tr><th>ci</th><td><span class="type">Mapping[str, Mapping]</span>；每项可传 <code>{"lower": 0.75, "upper": 0.88}</code>，显示非对称误差条。</td></tr><tr><th>输出</th><td><span class="type">Figure</span>；适合直接绘制 clinical metrics 的 point estimates 与 bootstrap CI。</td></tr></table></div>
+      <div class="api"><h3><code>gray.plot.plot_roc_auc</code></h3><p><code>plot_roc_auc(targets, probabilities, positive_label=None, *, ci=False, n_bootstrap=2000, confidence=0.95, seed=42, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><table class="contract"><tr><th>输入</th><td><span class="type">Sequence[Any]</span> 二分类 targets；<span class="type">Sequence[float]</span> 的一维 <code>P(positive_label)</code>。</td></tr><tr><th>CI</th><td><code>ci=True</code> 时对 AUC 作 bootstrap percentile CI，显示在 legend；<code>n_bootstrap &gt;= 100</code>，<code>0 &lt; confidence &lt; 1</code>。</td></tr><tr><th>约束</th><td>概率必须在 [0,1]，并且两个类别均出现；不绘制多分类 ROC。</td></tr></table></div>
+      <div class="api"><h3><code>gray.plot.plot_pr_curve</code></h3><p><code>plot_pr_curve(targets, probabilities, positive_label=None, *, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>绘制二分类 Precision-Recall 曲线，并在 legend 显示 Average Precision / PR-AUC。</p></div>
+      <div class="api"><h3><code>gray.plot.plot_calibration_curve</code></h3><p><code>plot_calibration_curve(targets, probabilities, positive_label=None, *, n_bins=10, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>调用现有 <code>gray.metrics.calibration_curve</code>，绘制可靠性曲线、完美校准对角线和 ECE。</p></div>
+      <div class="api"><h3><code>gray.plot.plot_threshold_report</code></h3><p><code>plot_threshold_report(targets, probabilities, positive_label=None, *, thresholds=None, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>绘制 Sensitivity、Specificity、PPV、NPV、F1 与阈值的关系，并标出 Youden-J 最优阈值。</p></div>
+      <div class="api"><h3><code>gray.plot.plot_training_history</code></h3><p><code>plot_training_history(history, *, metrics=("loss", "f1_macro"), ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p><code>history</code> 为 <span class="type">Mapping[str, Sequence[float]]</span>，键支持 <code>train.loss</code> / <code>valid.loss</code> 或 <code>train_loss</code> / <code>valid_loss</code>。</p></div>
+      <pre>from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
+
+plot_confusion_matrix(targets, predictions, labels=["Non-BCC", "BCC"],
+                      normalize=True, save_path="figures/confusion_matrix.png")
+plot_roc_auc(targets, bcc_probabilities, positive_label="BCC", ci=True,
+             n_bootstrap=2_000, save_path="figures/roc_auc.png")
+plot_metrics({"f1_macro": 0.82, "roc_auc": 0.89},
+             ci={"roc_auc": {"lower": 0.81, "upper": 0.95}},
+             save_path="figures/metrics.png")</pre>
+    </section>
+
     <section id="dicom">
       <h2>DICOM / SimpleITK</h2>
       <p class="lead">当前只使用 SimpleITK；不处理患者 metadata、Series 发现或 Series 选择。</p>
@@ -179,14 +201,14 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
     var entries = Array.prototype.slice.call(document.querySelectorAll(".api"));
     var sections = Array.prototype.slice.call(document.querySelectorAll("main > div > section"));
     var root = "https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/";
-    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.optuna":"optuna/run_optuna.py"};
+    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.plot":"plot/", "gray.optuna":"optuna/run_optuna.py"};
     document.querySelectorAll(".api h3 code").forEach(function (label) {
       var name = label.textContent.trim();
       var path = null;
       Object.keys(paths).some(function (prefix) {
         if (name.indexOf(prefix) !== 0) return false;
         var rest = name.slice(prefix.length).replace(/^\./, "").split(/\s|\//)[0];
-        if (prefix === "gray.utils" || prefix === "gray.dicom" || prefix === "gray.metrics") path = paths[prefix] + rest + ".py";
+        if (prefix === "gray.utils" || prefix === "gray.dicom" || prefix === "gray.metrics" || prefix === "gray.plot") path = paths[prefix] + rest + ".py";
         else if (prefix === "gray.optuna") path = paths[prefix];
         else path = paths[prefix];
         return true;
