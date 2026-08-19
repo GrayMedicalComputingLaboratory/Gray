@@ -10,6 +10,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/core/device.py` | Explicit CPU/CUDA device validation. | Seeding, model execution or CUDA memory policy. |
 | `source/gray/core/provenance.py` | Checkpoint checksum and model identity manifest. | Artifact writing policy or training logic. |
 | `source/gray/callbacks/early_stopping.py` | Framework-independent metric-based early stopping state. | Model calls, checkpoint writing or training-loop ownership. |
+| `source/gray/inference/ensemble.py` | Equal or weighted averaging of classification probabilities. | Model loading, forward passes, logits conversion or threshold policy. |
 | `source/gray/utils/seed_everything.py` | Process-wide Python, NumPy and PyTorch random-state control. | DataLoader worker initialization, logging or IO. |
 | `source/gray/utils/seed_worker.py` | One PyTorch DataLoader worker's random-state control. | Global process seeding or IO. |
 | `source/gray/utils/torch_generator.py` | Seeded PyTorch `Generator` construction. | DataLoader configuration or global seeding. |
