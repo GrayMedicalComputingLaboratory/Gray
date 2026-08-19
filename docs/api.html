@@ -106,18 +106,22 @@ for epoch in range(epochs):
       <p class="lead">推理结果的通用后处理；不负责模型加载或前向计算。</p>
       <div class="api green">
         <h3><code>gray.inference.Ensemble</code></h3>
-        <p><code>Ensemble(weights=None)</code></p>
+        <p><code>Ensemble(*probabilities, method="mean", weights=None) -&gt; np.ndarray</code></p>
         <table class="contract">
-          <tr><th>输入</th><td><code>predict(probabilities)</code> 接收每个模型一个概率数组。二分类形状为 <code>[n_samples]</code>，多分类为 <code>[n_samples, n_classes]</code>；单模型使用一项序列。</td></tr>
-          <tr><th>权重</th><td><code>weights=None</code> 使用等权平均；显式权重必须非负、有限且数量与模型一致，内部自动归一化。</td></tr>
-          <tr><th>输出</th><td>与单个模型输出形状相同的 <code>numpy.ndarray</code> 概率；实例也可直接调用。</td></tr>
+          <tr><th>输入</th><td>每个模型概率作为一个独立位置参数。二分类形状为 <code>[n_samples]</code>，多分类为 <code>[n_samples, n_classes]</code>；单模型直接传一个数组。</td></tr>
+          <tr><th>方法</th><td><code>method="mean"</code> 使用等权平均；<code>method="weighted"</code> 必须传入非负、有限且数量与模型一致的 <code>weights</code>。</td></tr>
+          <tr><th>输出</th><td>与单个模型输出形状相同的 <code>numpy.ndarray</code> 概率。</td></tr>
           <tr><th>限制</th><td>只接收范围为 <code>[0, 1]</code> 的概率，不接收 logits；多分类每行概率和必须为 1。</td></tr>
         </table>
       </div>
       <pre>from gray.inference import Ensemble
 
-ensemble = Ensemble(weights=[0.6, 0.4])
-probabilities = ensemble.predict([model_a_probabilities, model_b_probabilities])</pre>
+probabilities = Ensemble(
+    model_a_probabilities,
+    model_b_probabilities,
+    method="weighted",
+    weights=[0.6, 0.4],
+)</pre>
     </section>
 
     <section id="utils">
