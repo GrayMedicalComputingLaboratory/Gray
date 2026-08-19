@@ -46,11 +46,9 @@
     <strong><img src="assets/gray-mark.png" alt="">目录</strong>
     <a href="#install">安装与约定</a>
     <a href="#config">配置与 CLI</a>
+    <a href="#callbacks">Callbacks</a>
     <a href="#utils">Utils</a>
-    <a href="#metrics">通用指标</a>
-    <a href="#clinical">临床二分类</a>
     <a href="#tta">TTA</a>
-    <a href="#plot">Plot</a>
     <a href="#dicom">DICOM / SimpleITK</a>
     <a href="#boundaries">边界</a>
   </nav>
@@ -80,6 +78,28 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
       <div class="api"><h3><code>gray.core.provenance.sha256</code> / <code>model_manifest</code></h3><p><code>sha256(path: Path) -&gt; str</code><br><code>model_manifest(config, checkpoint: Path) -&gt; dict</code></p><p>前者以流式方式计算文件哈希；后者记录实验、模型版本、数据版本、标签 schema、随机种子、fold、配置哈希、Git commit 和 checkpoint 哈希。checkpoint 相对路径按 <code>config._config_dir</code> 解析，Git commit 从 checkpoint/config 所在仓库读取，不依赖当前工作目录；找不到仓库时为 <code>None</code>。</p></div>
     </section>
 
+    <section id="callbacks">
+      <h2>Callbacks</h2>
+      <p class="lead">训练流程中的状态型回调。回调只维护自身状态，不负责模型或 checkpoint 文件写入。</p>
+      <div class="api green">
+        <h3><code>gray.callbacks.EarlyStopping</code></h3>
+        <p><code>EarlyStopping(patience=5, mode="min", min_delta=0.0)</code></p>
+        <table class="contract">
+          <tr><th>输入</th><td><code>patience</code>：允许连续不提升的步数；<code>mode</code>：<code>"min"</code> 或 <code>"max"</code>；<code>min_delta</code>：最小有效提升幅度。</td></tr>
+          <tr><th>调用</th><td>每次验证后调用 <code>step(metric)</code>；返回 <code>True</code> 时停止训练。<code>reset()</code> 可重新开始一轮监控。</td></tr>
+          <tr><th>状态</th><td><code>state_dict()</code> 返回可序列化状态；<code>load_state_dict(state)</code> 支持断点恢复。</td></tr>
+          <tr><th>异常</th><td>参数不合法或指标不是有限数值时抛出 <code>TypeError</code> / <code>ValueError</code>。</td></tr>
+        </table>
+      </div>
+      <pre>from gray.callbacks import EarlyStopping
+
+early_stopping = EarlyStopping(patience=5, mode="min")
+for epoch in range(epochs):
+    validation_loss = validate(...)
+    if early_stopping.step(validation_loss):
+        break</pre>
+    </section>
+
     <section id="utils">
       <h2>Utils</h2>
       <div class="api"><h3><code>gray.utils.seed_everything</code></h3><p><code>seed_everything(seed: int, deterministic: bool = True) -&gt; None</code></p><p>固定可用的 Python、NumPy、PyTorch、CUDA 和 cuDNN 状态；<code>deterministic=True</code> 会关闭 cuDNN benchmark 并请求确定性算法。函数只为子进程导出 <code>PYTHONHASHSEED</code>；当前解释器的 hash seed 必须在启动 Python 前设置。</p></div>
@@ -91,7 +111,7 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
       <div class="api"><h3>Utils 输入输出契约</h3><table class="contract"><tr><th>函数</th><th>输入</th><th>输出 / 行为</th></tr><tr><td><code>seed_everything</code></td><td><span class="type">int</span> seed；<span class="type">bool</span> deterministic。</td><td><span class="type">None</span>；固定 Python/NumPy/PyTorch/CUDA 状态。</td></tr><tr><td><code>seed_worker</code></td><td><span class="type">int</span> worker_id，必须 ≥ 0。</td><td><span class="type">None</span>；从 PyTorch worker seed 派生。</td></tr><tr><td><code>torch_generator</code></td><td><span class="type">int</span> seed。</td><td><span class="type">torch.Generator</span>；可传给 DataLoader。</td></tr><tr><td><code>tta</code></td><td><span class="type">np.ndarray</span> 或 <span class="type">torch.Tensor</span>；<code>dim="2d"</code> 至少 2 维，<code>dim="3d"</code> 至少 3 维。</td><td><span class="type">dict[str, sample]</span>；只返回原图及显式选择的变体。</td></tr></table></div>
     </section>
 
-    <section id="metrics">
+    <section id="metrics" hidden>
       <h2>通用指标</h2>
       <p class="lead">每项指标均可独立导入；<code>classification_metrics</code> 只负责组合。</p>
       <div class="api"><h3>输入约定与失败行为</h3><table><tr><th>targets / predictions</th><td>等长的一维序列；标签可为字符串或数字。长度不一致、空输入会抛出 <code>ValueError</code>。</td></tr><tr><th>probabilities</th><td>统一使用概率输入：二分类可传正类概率的一维序列；二维矩阵必须为 <code>[n_samples, 2]</code>，并用 <code>labels=[negative, positive]</code> 明确列顺序；多分类矩阵列顺序必须与 <code>labels</code> 一致。</td></tr><tr><th>average</th><td><code>macro</code> 对每类等权；<code>weighted</code> 按 support 加权；不支持的值会抛出 <code>ValueError</code>。</td></tr><tr><th>single-class input</th><td>ROC-AUC、PR-AUC、校准相关指标无法定义时返回 <code>None</code>；二分类临床 helpers 要求 targets 实际包含两个声明类别。</td></tr></table></div>
@@ -114,7 +134,7 @@ report = classification_metrics(targets, predictions, positive_probabilities, ["
       <div class="api"><h3>指标输入输出契约</h3><table class="contract"><tr><th>指标组</th><th>必须输入</th><th>可选输入</th><th>输出</th></tr><tr><td>accuracy / balanced_accuracy</td><td><span class="type">Sequence[Any]</span> targets、predictions，等长。</td><td>无。</td><td><span class="type">float</span>，范围 [0,1]。</td></tr><tr><td>precision / recall / f1</td><td>targets、predictions。</td><td><span class="type">Sequence[Any]</span> labels；<code>average="macro" | "weighted"</code>。</td><td><span class="type">float</span>。</td></tr><tr><td>confusion_matrix / classification_report</td><td>targets、predictions。</td><td>固定类别顺序 labels。</td><td><span class="type">list[list[int]]</span> 或报告字典。</td></tr><tr><td>roc_auc / pr_auc</td><td>targets；二分类正类分数或多分类分数矩阵。</td><td>labels 定义矩阵列顺序。</td><td><span class="type">float | None</span>；单类别返回 None。</td></tr><tr><td>log_loss / brier_score</td><td>targets、概率。</td><td>labels 定义概率列顺序；省略时从 targets 推断。</td><td><span class="type">float | None</span>。</td></tr><tr><td>specificity_per_class</td><td>targets、predictions。</td><td>labels。</td><td><span class="type">dict[str, float]</span>，每类 one-vs-rest 特异度。</td></tr></table></div>
     </section>
 
-    <section id="clinical">
+    <section id="clinical" hidden>
       <h2>临床二分类</h2>
       <div class="api gold"><h3><code>clinical_binary_metrics</code></h3><p><code>clinical_binary_metrics(targets, predictions, probabilities, positive_label=None, n_bins=10, n_bootstrap=2000, confidence=0.95, seed=42, thresholds=None) -&gt; dict</code></p><p>组合 Sensitivity、Specificity、PPV、NPV、ROC-AUC、PR-AUC、ECE、Brier、bootstrap CI 和阈值报告。</p><p>目标与预测必须同时包含两个类别；单类 fold 使用通用指标。</p></div>
       <div class="api gold"><h3>clinical_binary_metrics 参数</h3><table class="contract"><tr><th>参数</th><th>支持类型</th><th>要求与默认值</th></tr><tr><td><code>targets</code> / <code>predictions</code></td><td><span class="type">Sequence[Any]</span></td><td>等长，且结果中必须能观测到正、负两个类别。</td></tr><tr><td><code>probabilities</code></td><td><span class="type">Sequence[float]</span> <span class="type">np.ndarray</span></td><td>一维 <code>P(positive_label)</code>，长度与 targets 相同，值应在 [0,1]。</td></tr><tr><td><code>positive_label</code></td><td><span class="type">Any | None</span></td><td>显式建议传入；省略时由二分类标签集合推断。</td></tr><tr><td><code>n_bins</code></td><td><span class="type">int</span></td><td>校准曲线分箱数，默认 10。</td></tr><tr><td><code>n_bootstrap</code></td><td><span class="type">int</span></td><td>percentile bootstrap 重采样次数，默认 2,000。</td></tr><tr><td><code>confidence</code></td><td><span class="type">float</span></td><td>区间置信度，默认 0.95。</td></tr><tr><td><code>thresholds</code></td><td><span class="type">Sequence[float] | None</span></td><td>待评估阈值；省略时使用内置网格。</td></tr></table></div>
@@ -133,7 +153,7 @@ logits = [model(value) for value in variants.values()]</pre>
       <p>返回键包括 <code>original</code>、<code>horizontal_flip</code>、<code>vertical_flip</code>、<code>rotate90_90</code> 等。Gray 只生成变体，预测如何聚合由项目决定。</p>
     </section>
 
-    <section id="plot">
+    <section id="plot" hidden>
       <h2>gray.plot</h2>
       <p class="lead">可复用评估图表。所有函数返回 <code>matplotlib.figure.Figure</code>，支持传入 <code>ax</code> 嵌入现有布局，并通过 <code>save_path</code> 自动创建目录并保存 PNG、PDF 或 SVG。</p>
       <div class="api"><h3><code>gray.plot.plot_confusion_matrix</code></h3><p><code>plot_confusion_matrix(targets, predictions, labels=None, *, normalize=False, cmap="Blues", annotate=True, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><table class="contract"><tr><th>输入</th><td><span class="type">Sequence[Any]</span> targets、predictions；可选固定顺序 <span class="type">Sequence[Any]</span> labels。</td></tr><tr><th>选项</th><td><code>normalize=True</code> 使用每个真实类别行归一化比例；<code>annotate</code> 控制格内数值；<code>cmap</code> 为 Matplotlib colormap 名称。</td></tr><tr><th>输出</th><td><span class="type">Figure</span>；标签不对齐或输入为空抛出 <code>ValueError</code>。</td></tr></table></div>
@@ -156,13 +176,13 @@ plot_metrics({"f1_macro": 0.82, "roc_auc": 0.89},
     <section id="dicom">
       <h2>DICOM / SimpleITK</h2>
       <p class="lead">当前只使用 SimpleITK；不处理患者 metadata、Series 发现或 Series 选择。</p>
-      <table><tr><th>函数</th><th>输入</th><th>输出</th></tr>
-        <tr><td><code>read_series</code></td><td>项目已排序的 DICOM 路径列表</td><td><code>sitk.Image</code></td></tr>
-        <tr><td><code>get_spacing</code></td><td><code>sitk.Image</code></td><td>正浮点 spacing 元组</td></tr>
-        <tr><td><code>apply_rescale</code></td><td><code>sitk.Image</code></td><td>应用 Slope/Intercept 后的 Image</td></tr>
-        <tr><td><code>apply_window_level</code></td><td>Image、window_width、window_center</td><td>映射到指定输出范围的 Image</td></tr>
-        <tr><td><code>apply_monochrome</code></td><td>Image、MONOCHROME1/2?</td><td>极性统一后的 Image</td></tr>
-        <tr><td><code>resample_volume</code></td><td>Image、target_spacing、interpolator</td><td>重采样后的 Image；nearest 保持输入 pixel type，linear/bspline 为 float32</td></tr>
+      <table><tr><th>函数</th><th>输入</th><th>输出</th><th>源码</th></tr>
+        <tr><td><code>read_series</code></td><td>项目已排序的 DICOM 路径列表</td><td><code>sitk.Image</code></td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/read_series.py#L10" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>get_spacing</code></td><td><code>sitk.Image</code></td><td>正浮点 spacing 元组</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/get_spacing.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>apply_rescale</code></td><td><code>sitk.Image</code></td><td>应用 Slope/Intercept 后的 Image</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_rescale.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>apply_window_level</code></td><td>Image、window_width、window_center</td><td>映射到指定输出范围的 Image</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_window_level.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>apply_monochrome</code></td><td>Image、MONOCHROME1/2?</td><td>极性统一后的 Image</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_monochrome.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>resample_volume</code></td><td>Image、target_spacing、interpolator</td><td>重采样后的 Image；nearest 保持输入 pixel type，linear/bspline 为 float32</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/resample_volume.py#L11" target="_blank" rel="noopener">Source ↗</a></td></tr>
       </table>
       <div class="api"><h3>DICOM 函数契约</h3><table class="contract"><tr><th>函数</th><th>支持输入</th><th>输出与约束</th></tr><tr><td><code>read_series</code></td><td><span class="type">Sequence[str | Path]</span>，已经选择且排序的 DICOM 文件。</td><td><span class="type">sitk.Image</span>；空序列抛出 <code>ValueError</code>，缺失文件抛出 <code>FileNotFoundError</code>。</td></tr><tr><td><code>get_spacing</code></td><td><span class="type">sitk.Image</span></td><td><span class="type">tuple[float, ...]</span>；所有 spacing 必须为正。</td></tr><tr><td><code>apply_rescale</code></td><td><span class="type">sitk.Image</span></td><td><span class="type">sitk.Image</span> float32；读取 DICOM slope/intercept metadata。</td></tr><tr><td><code>apply_monochrome</code></td><td><span class="type">sitk.Image</span>；可选 <span class="type">str | None</span> interpretation。</td><td><span class="type">sitk.Image</span>；只接受 <code>MONOCHROME1</code> / <code>MONOCHROME2</code>。</td></tr><tr><td><code>apply_window_level</code></td><td><span class="type">sitk.Image</span>，<span class="type">float</span> width、center、output_min、output_max。</td><td><span class="type">sitk.Image</span> float32；width 必须 > 0，output_max 必须 > output_min。</td></tr><tr><td><code>resample_volume</code></td><td><span class="type">sitk.Image</span>，<span class="type">Sequence[float]</span> target_spacing，<span class="type">str</span> interpolator。</td><td><span class="type">sitk.Image</span>；仅 <code>nearest</code>、<code>linear</code>、<code>bspline</code>。</td></tr></table></div>
       <div class="note">mask/label 使用 <code>interpolator="nearest"</code>；如果上游已经完成 rescale，不要重复调用 <code>apply_rescale</code>。<code>nearest</code> 保持输入 pixel type；<code>linear</code>/<code>bspline</code> 输出 float32，避免整数强制舍入插值结果。</div>
@@ -187,32 +207,31 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
     var entries = Array.prototype.slice.call(document.querySelectorAll(".api"));
     var sections = Array.prototype.slice.call(document.querySelectorAll("main > div > section"));
     var root = "https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/";
-    var paths = {"gray.core.config":"core/config.py", "gray.core.device":"core/device.py", "gray.core.provenance":"core/provenance.py", "gray.utils":"utils/", "gray.dicom":"dicom/", "gray.metrics":"metrics/", "gray.plot":"plot/"};
+    var sources = {
+      "gray.core.config.load_config": "core/config.py#L11",
+      "gray.core.config.resolve_path": "core/config.py#L56",
+      "gray.core.config.artifact_dir": "core/config.py#L76",
+      "gray.core.device.resolve_device": "core/device.py#L5",
+      "gray.core.provenance.sha256": "core/provenance.py#L29",
+      "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
+      "gray.utils.seed_everything": "utils/seed_everything.py#L10",
+      "gray.utils.seed_worker": "utils/seed_worker.py#L9",
+      "gray.utils.torch_generator": "utils/torch_generator.py#L7",
+      "gray.utils.get_logger": "utils/logging.py#L10",
+      "gray.utils.write_json / read_json": "utils/io.py#L12",
+      "gray.utils.tta": "utils/tta.py#L10"
+    };
     document.querySelectorAll(".api h3 code").forEach(function (label) {
       var name = label.textContent.trim();
-      var path = null;
-      Object.keys(paths).some(function (prefix) {
-        if (name.indexOf(prefix) !== 0) return false;
-        var rest = name.slice(prefix.length).replace(/^\./, "").split(/\s|\//)[0];
-        if (prefix === "gray.utils" || prefix === "gray.dicom" || prefix === "gray.metrics" || prefix === "gray.plot") path = paths[prefix] + rest + ".py";
-        else path = paths[prefix];
-        return true;
-      });
-      if (!path && name === "clinical_binary_metrics") path = "metrics/clinical_binary_metrics.py";
-      if (!path) {
-        var section = label.closest("section");
-        var sectionId = section && section.id;
-        var bare = name.split(/\s|\//)[0];
-        var folder = sectionId === "dicom" ? "dicom/" : (sectionId === "utils" || sectionId === "tta" ? "utils/" : (sectionId === "metrics" || sectionId === "clinical" ? "metrics/" : null));
-        if (folder && /^[a-z_]+$/.test(bare)) path = folder + bare + ".py";
-      }
+      var path = sources[name];
       if (!path) return;
+      if (label.parentElement.querySelector(".source-link")) return;
       var link = document.createElement("a");
       link.className = "source-link";
       link.href = root + path;
       link.target = "_blank";
       link.rel = "noopener";
-      link.textContent = "View source ↗";
+      link.textContent = "Source ↗";
       label.parentElement.appendChild(link);
     });
     input.addEventListener("input", function () {
