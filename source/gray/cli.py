@@ -14,6 +14,22 @@ from gray.utils.io import write_json
 
 
 def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, Any]], Any]:
+    """Import the project-owned callable configured for a workflow stage.
+
+    Args:
+        config: Experiment configuration containing
+            ``project.entrypoints.<stage>``.
+        stage: Workflow stage whose entry point should be loaded.
+
+    Returns:
+        The configured callable, which accepts the resolved configuration.
+
+    Raises:
+        ValueError: If the entry point is missing or not written as
+            ``package.module:function``.
+        ImportError: If the configured module cannot be imported.
+        TypeError: If the referenced module attribute is not callable.
+    """
     target = config.get("project", {}).get("entrypoints", {}).get(stage)
     if not isinstance(target, str) or ":" not in target:
         raise ValueError(
@@ -29,6 +45,26 @@ def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, 
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Run a configured training, validation, or analysis stage.
+
+    If the project entry point returns a dictionary, it is saved as
+    ``summary.json`` in the stage artifact directory before the result is
+    printed.
+
+    Args:
+        argv: Command-line arguments excluding the executable name. ``None``
+            reads arguments from :data:`sys.argv`.
+
+    Returns:
+        None.
+
+    Raises:
+        SystemExit: If command-line arguments are invalid.
+        FileNotFoundError: If the configuration file does not exist.
+        ValueError: If the configuration or configured entry point is invalid.
+        ImportError: If the entry-point module cannot be imported.
+        TypeError: If the entry-point attribute is not callable.
+    """
     parser = argparse.ArgumentParser(prog="gray")
     parser.add_argument("command", choices=("train", "validate", "analyze"))
     parser.add_argument("--config", required=True)

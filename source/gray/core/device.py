@@ -3,7 +3,20 @@ from __future__ import annotations
 
 
 def resolve_device(value: str | int) -> str:
-    """Validate an explicit CPU or CUDA device; never silently fall back."""
+    """Validate and normalize an explicitly selected runtime device.
+
+    Args:
+        value: ``"cpu"``, ``"cuda"``, ``"cuda:N"``, a numeric string, or a
+            non-negative integer GPU index.
+
+    Returns:
+        ``"cpu"`` or a normalized CUDA identifier such as ``"cuda:0"``.
+
+    Raises:
+        ValueError: If ``value`` is not a supported device specification.
+        RuntimeError: If CUDA is requested but PyTorch is unavailable, CUDA is
+            disabled, or the requested GPU index does not exist.
+    """
     if value == "cpu":
         return "cpu"
     if value == "cuda":

@@ -9,7 +9,28 @@ from omegaconf import DictConfig, OmegaConf
 
 
 def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[str, Any], Path]:
-    """Compose one experiment YAML through Hydra without config-group composition."""
+    """Load and resolve one self-contained experiment YAML file with Hydra.
+
+    The configuration filename determines ``experiment_id``. Hydra overrides
+    are applied before interpolation is resolved, and ``_config_dir`` is added
+    to the returned mapping for portable relative-path resolution.
+
+    Args:
+        path: Path to the experiment YAML file.
+        overrides: Hydra override expressions such as ``train.seed=42``.
+
+    Returns:
+        A pair containing the resolved configuration dictionary and the
+        absolute path to its source file.
+
+    Raises:
+        FileNotFoundError: If ``path`` is not an existing file.
+        ValueError: If the YAML root is not a mapping, uses Hydra ``defaults``,
+            resolves to an invalid value, or defines a conflicting
+            ``experiment_id``.
+        omegaconf.errors.OmegaConfBaseException: If parsing, an override, an
+            interpolation, or a mandatory value is invalid.
+    """
     source = Path(path).expanduser().resolve()
     if not source.is_file():
         raise FileNotFoundError(f"config not found: {source}")
@@ -33,13 +54,42 @@ def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[s
 
 
 def resolve_path(config: dict[str, Any], value: str | Path) -> Path:
-    """Resolve relative paths from the configuration location, never the CWD."""
+    """Resolve a path relative to the configuration file directory.
+
+    Args:
+        config: Configuration returned by :func:`load_config`. It must contain
+            the internal ``_config_dir`` field.
+        value: Absolute path or path relative to the configuration directory.
+
+    Returns:
+        The expanded input path when absolute, otherwise an absolute path
+        resolved from ``config["_config_dir"]``.
+
+    Raises:
+        KeyError: If a relative path is supplied and ``_config_dir`` is absent.
+        TypeError: If ``value`` is not path-like.
+    """
     path = Path(value).expanduser()
     return path if path.is_absolute() else (Path(config["_config_dir"]) / path).resolve()
 
 
 def artifact_dir(config: dict[str, Any], stage: str, create: bool = False) -> Path:
-    """Return ``output_root/<experiment_id>/<stage>`` for one isolated experiment."""
+    """Build the artifact directory for one experiment stage.
+
+    Args:
+        config: Experiment configuration containing ``project.output_root`` and
+            ``experiment_id``.
+        stage: Single directory name, for example ``train`` or ``validate``.
+        create: Create the directory and missing parents when ``True``.
+
+    Returns:
+        ``<output_root>/<experiment_id>/<stage>`` as a path.
+
+    Raises:
+        ValueError: If ``stage`` is empty, absolute, nested, ``.`` or ``..``.
+        KeyError: If required configuration fields are missing.
+        OSError: If ``create`` is true and the directory cannot be created.
+    """
     stage_path = Path(stage)
     if not stage or stage_path.is_absolute() or stage_path.name != stage or stage in {".", ".."}:
         raise ValueError(f"invalid artifact stage: {stage!r}")

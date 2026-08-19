@@ -5,7 +5,22 @@ import SimpleITK as sitk
 
 
 def apply_monochrome(image: sitk.Image, photometric_interpretation: str | None = None) -> sitk.Image:
-    """Invert MONOCHROME1 images; leave MONOCHROME2 images unchanged."""
+    """Normalize a monochrome DICOM image to MONOCHROME2 polarity.
+
+    Args:
+        image: Input SimpleITK image. When ``photometric_interpretation`` is
+            omitted, metadata tag ``0028|0004`` is used when available.
+        photometric_interpretation: Explicit ``MONOCHROME1`` or
+            ``MONOCHROME2`` value. Missing metadata defaults to ``MONOCHROME2``.
+
+    Returns:
+        A polarity-inverted image with the original pixel type for
+        ``MONOCHROME1``; the original image object for ``MONOCHROME2``.
+
+    Raises:
+        TypeError: If ``image`` is not a SimpleITK image.
+        ValueError: If the photometric interpretation is unsupported.
+    """
     if not isinstance(image, sitk.Image):
         raise TypeError("image must be a SimpleITK Image")
     interpretation = photometric_interpretation

@@ -9,7 +9,15 @@ from typing import Any
 
 
 def _find_repo_root(*locations: Path) -> Path | None:
-    """Find the nearest Git worktree containing one of the supplied paths."""
+    """Find the nearest Git worktree containing any supplied location.
+
+    Args:
+        *locations: Files or directories from which to search upward.
+
+    Returns:
+        The first directory containing ``.git``, or ``None`` when no worktree
+        can be found.
+    """
     for location in locations:
         current = location if location.is_dir() else location.parent
         for candidate in (current, *current.parents):
@@ -19,7 +27,19 @@ def _find_repo_root(*locations: Path) -> Path | None:
 
 
 def sha256(path: Path) -> str:
-    """Return a streaming SHA-256 checksum for one file."""
+    """Calculate the SHA-256 checksum of a file without loading it all at once.
+
+    Args:
+        path: File to hash.
+
+    Returns:
+        The lowercase hexadecimal SHA-256 digest.
+
+    Raises:
+        FileNotFoundError: If ``path`` does not exist.
+        IsADirectoryError: If ``path`` is a directory.
+        OSError: If the file cannot be read.
+    """
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -28,7 +48,25 @@ def sha256(path: Path) -> str:
 
 
 def model_manifest(config: dict[str, Any], checkpoint: Path) -> dict[str, Any]:
-    """Build the minimum model identity record stored beside a checkpoint."""
+    """Build a reproducibility manifest for a trained model checkpoint.
+
+    The manifest records model and data identity, a stable configuration hash,
+    the current Git commit when discoverable, and the checkpoint checksum.
+
+    Args:
+        config: Resolved experiment configuration with model, data, and training
+            metadata. Relative checkpoints use its optional ``_config_dir``.
+        checkpoint: Model checkpoint file to identify and hash.
+
+    Returns:
+        A JSON-serializable dictionary describing the candidate model artifact.
+
+    Raises:
+        KeyError: If required configuration fields are missing.
+        FileNotFoundError: If the checkpoint does not exist.
+        OSError: If the checkpoint cannot be read.
+        TypeError: If public configuration values are not JSON-serializable.
+    """
     checkpoint = Path(checkpoint).expanduser()
     if not checkpoint.is_absolute() and config.get("_config_dir"):
         checkpoint = Path(config["_config_dir"]) / checkpoint

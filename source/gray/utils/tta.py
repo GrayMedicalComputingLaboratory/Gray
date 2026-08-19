@@ -15,13 +15,34 @@ def tta(
     vertical_flip: bool = False,
     rotate90_angles: Sequence[int] = (0,),
 ) -> dict[str, Any]:
-    """Return selected 2D-plane TTA variants keyed by their deterministic names.
+    """Generate selected in-plane test-time augmentation variants.
 
     The two spatial axes are always the final ``H, W`` axes. For ``dim="3d"``,
     all leading axes, including depth/Z, remain in place; every slice receives
     the same in-plane transform. Variants are independent rather than a
     flip-rotation Cartesian product: ``original``, each selected flip, and each
     selected non-zero rotation are returned once.
+
+    Args:
+        sample: NumPy array or PyTorch tensor with spatial ``H, W`` as its final
+            two axes.
+        dim: ``"2d"`` for samples with at least two axes or ``"3d"`` for
+            samples with at least three axes.
+        horizontal_flip: Include a variant flipped along the final axis.
+        vertical_flip: Include a variant flipped along the penultimate axis.
+        rotate90_angles: Integer multiples of 90 degrees. Angles are normalized
+            modulo 360 and duplicate rotations are removed.
+
+    Returns:
+        A dictionary from deterministic variant names to transformed samples.
+        It always contains ``"original"``. NumPy transformations are copied;
+        the original value is retained by reference.
+
+    Raises:
+        ValueError: If ``dim`` is invalid, the sample has too few dimensions,
+            or a rotation is not an integer multiple of 90.
+        TypeError: If flip flags are not booleans or ``sample`` is neither a
+            NumPy array nor a PyTorch tensor.
     """
     if dim not in {"2d", "3d"}:
         raise ValueError("dim must be '2d' or '3d'")

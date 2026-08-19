@@ -8,7 +8,22 @@ from rich.logging import RichHandler
 
 
 def get_logger(name: str, output_dir: Path) -> logging.Logger:
-    """Return an isolated console/file logger for one output directory."""
+    """Create or reuse an isolated console and file logger.
+
+    Repeated calls with the same name and resolved directory reuse the logger
+    without adding duplicate handlers. Log records are written to
+    ``<output_dir>/run.log`` and displayed through Rich.
+
+    Args:
+        name: Logical logger name.
+        output_dir: Directory in which to create ``run.log``.
+
+    Returns:
+        A non-propagating logger configured at ``INFO`` level.
+
+    Raises:
+        OSError: If the output directory or log file cannot be created.
+    """
     output_dir = Path(output_dir).expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(f"{name}:{output_dir}")

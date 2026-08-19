@@ -5,7 +5,24 @@ import SimpleITK as sitk
 
 
 def apply_window_level(image: sitk.Image, window_width: float, window_center: float, output_min: float = 0.0, output_max: float = 1.0) -> sitk.Image:
-    """Clip a volume to the requested window and map it to an output range."""
+    """Window image intensities and map them into a requested output range.
+
+    Args:
+        image: Input SimpleITK image.
+        window_width: Positive width of the input intensity window.
+        window_center: Center of the input intensity window.
+        output_min: Value assigned to intensities at or below the lower bound.
+        output_max: Value assigned to intensities at or above the upper bound.
+
+    Returns:
+        A float image clipped to the window and linearly mapped between
+        ``output_min`` and ``output_max``.
+
+    Raises:
+        TypeError: If ``image`` is not a SimpleITK image.
+        ValueError: If the window width is not positive or the output range is
+            not strictly increasing.
+    """
     if not isinstance(image, sitk.Image):
         raise TypeError("image must be a SimpleITK Image")
     if window_width <= 0:

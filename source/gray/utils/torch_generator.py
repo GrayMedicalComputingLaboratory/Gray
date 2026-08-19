@@ -5,7 +5,19 @@ from typing import Any
 
 
 def torch_generator(seed: int) -> Any:
-    """Create a seeded generator for ``DataLoader(generator=...)``."""
+    """Create a reproducibly seeded PyTorch random generator.
+
+    Args:
+        seed: Integer seed passed to ``torch.Generator.manual_seed``.
+
+    Returns:
+        A seeded ``torch.Generator`` suitable for the DataLoader ``generator``
+        argument.
+
+    Raises:
+        RuntimeError: If PyTorch is not installed or rejects the seed value.
+        TypeError: If PyTorch rejects the supplied seed type.
+    """
     try:
         import torch
     except ImportError as error:
