@@ -15,7 +15,7 @@ def experiment_report(manifest: Mapping[str, Any], *, console: Console | None = 
     """Print the lineage and identities of one experiment manifest.
 
     Args:
-        manifest: Mapping returned by :func:`gray.core.experiment_manifest`.
+        manifest: Mapping returned by :func:`gray.experiment.experiment_manifest`.
         console: Rich console receiving the report. ``None`` uses standard output.
 
     Returns:
@@ -31,7 +31,7 @@ def experiment_report(manifest: Mapping[str, Any], *, console: Console | None = 
     dataset = _section(manifest, "dataset")
     code = _section(manifest, "code")
     config = _section(manifest, "config")
-    training = _section(manifest, "training")
+    _section(manifest, "training")
     model = _section(manifest, "model")
     evaluation = manifest.get("evaluation")
     if evaluation is not None and not isinstance(evaluation, Mapping):

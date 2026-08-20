@@ -32,6 +32,12 @@ python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLa
 python -m pip install -e /path/to/gray
 ```
 
+启用 ClearML 实验管理：
+
+```bash
+python -m pip install "gray[clearml]"
+```
+
 ## 项目集成
 
 每个项目声明自己的生命周期入口；Gray 读取解析后的配置并调用对应函数。
@@ -170,6 +176,12 @@ For local development:
 
 ```bash
 python -m pip install -e /path/to/gray
+```
+
+Enable ClearML experiment management:
+
+```bash
+python -m pip install "gray[clearml]"
 ```
 
 ## Project Integration
