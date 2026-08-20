@@ -89,8 +89,7 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
       <div class="api green"><h3><code>gray.experiment.experiment_manifest</code></h3><p><code>experiment_manifest(config, checkpoint, *, evaluation=None, run_id=None) -&gt; dict</code></p><table class="contract"><tr><th>关系</th><td>显式建立 <code>Experiment → Dataset / Git Code / Config → Training → Model → Evaluation</code> 谱系。</td></tr><tr><th>Run ID</th><td>可传 ClearML Task ID；不传时读取 <code>config.run_id</code>，与作为实验方案名的 <code>experiment_id</code> 分离。</td></tr><tr><th>身份</th><td>保存数据版本、Git commit、配置版本及 SHA-256、checkpoint SHA-256、模型版本、训练 seed/fold 和评估结果。</td></tr><tr><th>输出</th><td>带 <code>schema_version</code> 的 JSON 可序列化字典，可保存为文件或上传实验追踪系统。</td></tr></table></div>
       <div class="api"><h3><code>gray.experiment.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><p>统一生成 <code>output_root / experiment_id / stage</code>；stage 必须是安全的单级目录名。</p></div>
       <div class="api"><h3><code>gray.experiment.model_manifest</code></h3><p><code>model_manifest(config, checkpoint) -&gt; dict</code></p><p>生成包含模型、数据、配置、Git commit 和 checkpoint SHA-256 的扁平模型身份。</p></div>
-      <div class="api green"><h3><code>gray.experiment.experiment_report</code></h3><p><code>experiment_report(manifest, *, console=None) -&gt; None</code></p><p>以 Rich 树和身份表显示 Experiment、输入版本、训练 Run、模型和评估状态。</p></div>
-      <div class="api green"><h3><code>gray.experiment.training_report</code></h3><p><code>training_report(config, *, console=None) -&gt; None</code></p><p>打印展开后的训练配置与 Python、操作系统、Gray、PyTorch、Hydra、ClearML 等环境版本；敏感字段自动遮蔽。</p></div>
+      <div class="api green"><h3><code>gray.experiment.experiment_report</code></h3><p><code>experiment_report(config, *, manifest=None, console=None) -&gt; None</code></p><p>打印展开后的实验配置与 Python、操作系统、Gray、PyTorch、Hydra、ClearML 等环境版本，敏感字段自动遮蔽；传入 <code>manifest</code> 时继续显示 Experiment、输入版本、训练 Run、模型和评估状态。</p></div>
       <pre data-language="python">from gray.experiment import Experiment
 
 experiment = Experiment(config)
@@ -294,8 +293,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.experiment.artifact_dir": "experiment/artifacts.py#L10",
       "gray.experiment.model_manifest": "experiment/manifest.py#L26",
       "gray.experiment.experiment_manifest": "experiment/manifest.py#L77",
-      "gray.experiment.experiment_report": "experiment/report.py#L14",
-      "gray.experiment.training_report": "experiment/training_report.py#L42",
+      "gray.experiment.experiment_report": "experiment/report.py#L44",
       "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
       "gray.inference.Ensemble": "inference/ensemble.py#L12",
       "gray.inference.tta": "inference/tta.py#L10",

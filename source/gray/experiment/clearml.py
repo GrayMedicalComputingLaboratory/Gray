@@ -152,7 +152,7 @@ class Experiment:
         self._task.upload_artifact("experiment_manifest", artifact_object=str(destination.resolve()))
         self._task.upload_artifact("checkpoint", artifact_object=str(checkpoint_path))
         if print_report:
-            experiment_report(manifest)
+            experiment_report(self._config, manifest=manifest)
         self._task.close()
         self._closed = True
         return manifest
