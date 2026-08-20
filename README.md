@@ -38,6 +38,12 @@ python -m pip install -e /path/to/gray
 python -m pip install "gray[clearml]"
 ```
 
+最小训练示例见 [`examples/main.py`](examples/main.py)，完成 `clearml-init` 后运行：
+
+```bash
+python examples/main.py
+```
+
 ## 项目集成
 
 每个项目声明自己的生命周期入口；Gray 读取解析后的配置并调用对应函数。
@@ -183,6 +189,9 @@ Enable ClearML experiment management:
 ```bash
 python -m pip install "gray[clearml]"
 ```
+
+See [`examples/main.py`](examples/main.py) for a minimal training run. After
+running `clearml-init`, execute it with `python examples/main.py`.
 
 ## Project Integration
 

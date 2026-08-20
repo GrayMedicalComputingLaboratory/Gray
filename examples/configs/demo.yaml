@@ -1,0 +1,23 @@
+config_version: v1.0
+
+project:
+  output_root: ../../outputs
+
+tracking:
+  project_name: Gray/Examples
+  tags:
+    - demo
+    - classification
+  output_uri: null
+
+data:
+  data_version: demo-v1
+  label_schema: binary-v1
+
+model:
+  architecture: demo-classifier
+  model_version: v1
+
+train:
+  seed: 42
+  epochs: 3
