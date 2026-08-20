@@ -123,11 +123,15 @@ class EarlyStopping:
         """
         if not isinstance(state, Mapping):
             raise TypeError("state must be a mapping")
-        if state.get("patience") != self.patience or state.get("mode") != self.mode:
+        if (
+            state.get("patience") != self.patience
+            or state.get("mode") != self.mode
+            or state.get("min_delta") != self.min_delta
+        ):
             raise ValueError("state configuration does not match this EarlyStopping instance")
         best_value = state["best_value"]
         if best_value is not None:
-            if not isinstance(best_value, (int, float)) or not math.isfinite(float(best_value)):
+            if isinstance(best_value, bool) or not isinstance(best_value, (int, float)) or not math.isfinite(float(best_value)):
                 raise ValueError("state best_value must be finite or None")
             best_value = float(best_value)
         best_step = state["best_step"]
@@ -136,10 +140,13 @@ class EarlyStopping:
             raise ValueError("state best_step must be a non-negative integer or None")
         if isinstance(bad_steps, bool) or not isinstance(bad_steps, int) or bad_steps < 0:
             raise ValueError("state num_bad_steps must be a non-negative integer")
+        stopped = state["stopped"]
+        if not isinstance(stopped, bool):
+            raise ValueError("state stopped must be a boolean")
         self.best_value = best_value
         self.best_step = best_step
         self.num_bad_steps = bad_steps
-        self.stopped = bool(state["stopped"])
+        self.stopped = stopped
 
     def _is_improvement(self, value: float) -> bool:
         if self.best_value is None:

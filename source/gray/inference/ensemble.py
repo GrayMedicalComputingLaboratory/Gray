@@ -44,7 +44,15 @@ def Ensemble(
     if not probabilities:
         raise ValueError("at least one model probability array is required")
 
-    arrays = [np.asarray(value, dtype=np.float64) for value in probabilities]
+    arrays: list[NDArray[np.float64]] = []
+    for value in probabilities:
+        array = np.asarray(value)
+        if np.iscomplexobj(array):
+            raise ValueError("probabilities must be real-valued")
+        try:
+            arrays.append(array.astype(np.float64, copy=False))
+        except (TypeError, ValueError) as error:
+            raise TypeError("probabilities must be numeric") from error
     expected_shape = arrays[0].shape
     if arrays[0].ndim not in {1, 2} or not expected_shape or expected_shape[0] == 0:
         raise ValueError("each model output must have shape [samples] or [samples, classes]")
@@ -82,7 +90,8 @@ def _normalize_weights(weights: Sequence[float] | None, model_count: int) -> NDA
         raise ValueError("weights length must match the number of model outputs")
     if not np.isfinite(values).all() or np.any(values < 0.0):
         raise ValueError("weights must contain finite non-negative values")
-    total = float(values.sum())
-    if total == 0.0:
+    maximum = float(values.max())
+    if maximum == 0.0:
         raise ValueError("weights must sum to a positive value")
-    return values / total
+    scaled = values / maximum
+    return scaled / scaled.sum()

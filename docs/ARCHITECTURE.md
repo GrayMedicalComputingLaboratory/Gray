@@ -20,7 +20,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/utils/logging.py` | Semantic terminal/file logging with an optional remote logger bridge. | Experiment lifecycle, metric aggregation or tracking SDK initialization. |
 | `source/gray/utils/io.py` | Small UTF-8 JSON artifact writes. | Project result schemas or data loading. |
 | `source/gray/utils/hashing.py` | Streaming file SHA-256 calculation. | Model identity, artifact policy or experiment metadata. |
-| `source/gray/dicom/<operation>.py` | SimpleITK-backed pixel and volume processing: read, rescale, window/level, polarity and resampling. | Patient metadata, Series discovery/selection, UID policy or clinical labels. |
+| `source/gray/dicom/<operation>.py` | SimpleITK-backed pixel and volume processing: read, window/level, polarity and resampling. | Raw stored-pixel rescaling, patient metadata, Series discovery/selection, UID policy or clinical labels. |
 
 ## Project Boundary
 

@@ -14,6 +14,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
+from ._config import redact_config
 
 _PACKAGES = (
     ("Gray", "gray"),
@@ -23,24 +24,9 @@ _PACKAGES = (
     ("Hydra", "hydra-core"),
     ("OmegaConf", "omegaconf"),
     ("SimpleITK", "SimpleITK"),
-    ("scikit-learn", "scikit-learn"),
-    ("Matplotlib", "matplotlib"),
-    ("PyYAML", "PyYAML"),
     ("Rich", "rich"),
     ("ClearML", "clearml"),
 )
-_SENSITIVE_NAMES = {
-    "access_key",
-    "api_key",
-    "client_secret",
-    "password",
-    "passwd",
-    "private_key",
-    "secret",
-    "token",
-}
-
-
 def experiment_report(
     config: Mapping[str, Any],
     *,
@@ -138,20 +124,14 @@ def _environment_table() -> Table:
 
 def _flatten_config(config: Mapping[str, Any], prefix: str = "") -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = []
-    for key, value in config.items():
+    redacted = redact_config(config)
+    for key, value in redacted.items():
         name = f"{prefix}.{key}" if prefix else str(key)
-        if _is_sensitive(name):
-            rows.append((name, "<redacted>"))
-        elif isinstance(value, Mapping) and value:
+        if isinstance(value, Mapping) and value:
             rows.extend(_flatten_config(value, name))
         else:
             rows.append((name, _format_value(value)))
     return rows
-
-
-def _is_sensitive(path: str) -> bool:
-    name = path.rsplit(".", 1)[-1].lower().replace("-", "_")
-    return name in _SENSITIVE_NAMES or any(name.endswith(f"_{suffix}") for suffix in _SENSITIVE_NAMES)
 
 
 def _format_value(value: Any) -> str:
@@ -196,11 +176,12 @@ def _identity_table(manifest: Mapping[str, Any]) -> Table:
     table = Table(title="Experiment Identity", border_style="blue", header_style="bold cyan")
     table.add_column("Object", style="cyan")
     table.add_column("Identity", overflow="fold")
-    table.add_row("Experiment", str(experiment["id"]))
-    table.add_row("Run", str(experiment.get("run_id") or "local run"))
-    table.add_row("Dataset", str(dataset["version"]))
-    table.add_row("Git Commit", str(code.get("git_commit") or "unavailable"))
-    table.add_row("Config", f"{config['version']} / {config['sha256']}")
-    table.add_row("Model", f"{model['version']} / {model['checkpoint_sha256']}")
-    table.add_row("Evaluation", json.dumps(evaluation, ensure_ascii=False) if evaluation is not None else "pending")
+    table.add_row("Experiment", Text(str(experiment["id"])))
+    table.add_row("Run", Text(str(experiment.get("run_id") or "local run")))
+    table.add_row("Dataset", Text(str(dataset["version"])))
+    table.add_row("Git Commit", Text(str(code.get("git_commit") or "unavailable")))
+    table.add_row("Config", Text(f"{config['version']} / {config['sha256']}"))
+    table.add_row("Model", Text(f"{model['version']} / {model['checkpoint_sha256']}"))
+    evaluation_text = json.dumps(evaluation, ensure_ascii=False) if evaluation is not None else "pending"
+    table.add_row("Evaluation", Text(evaluation_text))
     return table

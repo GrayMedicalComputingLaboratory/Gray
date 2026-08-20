@@ -22,6 +22,8 @@ def read_series(file_paths: Sequence[str | Path]) -> sitk.Image:
         FileNotFoundError: If any supplied path is not an existing file.
         RuntimeError: If SimpleITK cannot decode or assemble the series.
     """
+    if isinstance(file_paths, (str, Path)):
+        raise TypeError("file_paths must be a sequence of paths, not a single path")
     paths = [str(Path(path).expanduser()) for path in file_paths]
     if not paths:
         raise ValueError("file_paths must contain at least one DICOM file")
@@ -30,4 +32,11 @@ def read_series(file_paths: Sequence[str | Path]) -> sitk.Image:
         raise FileNotFoundError(f"DICOM files not found: {missing[0]}")
     reader = sitk.ImageSeriesReader()
     reader.SetFileNames(paths)
-    return reader.Execute()
+    image = reader.Execute()
+    metadata_reader = sitk.ImageFileReader()
+    metadata_reader.SetFileName(paths[0])
+    metadata_reader.ReadImageInformation()
+    photometric_key = "0028|0004"
+    if metadata_reader.HasMetaDataKey(photometric_key):
+        image.SetMetaData(photometric_key, metadata_reader.GetMetaData(photometric_key))
+    return image

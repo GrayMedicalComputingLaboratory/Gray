@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+from collections.abc import Mapping
 from typing import Any, Callable
 
 from rich.console import Console
@@ -31,7 +32,9 @@ def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, 
         ImportError: If the configured module cannot be imported.
         TypeError: If the referenced module attribute is not callable.
     """
-    target = config.get("project", {}).get("entrypoints", {}).get(stage)
+    project = config.get("project")
+    entrypoints = project.get("entrypoints") if isinstance(project, Mapping) else None
+    target = entrypoints.get(stage) if isinstance(entrypoints, Mapping) else None
     if not isinstance(target, str) or ":" not in target:
         raise ValueError(
             f"config.project.entrypoints.{stage} must be 'package.module:function'; "

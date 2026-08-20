@@ -10,21 +10,11 @@ from typing import Any
 
 from gray.utils.hashing import sha256
 
-
-_SENSITIVE_CONFIG_NAMES = {
-    "access_key",
-    "api_key",
-    "client_secret",
-    "password",
-    "passwd",
-    "private_key",
-    "secret",
-    "token",
-}
+from ._config import public_config, redact_config, resolve_config_path
 
 
-def model_manifest(config: Mapping[str, Any], checkpoint: str | Path) -> dict[str, Any]:
-    """Build a flat reproducibility identity for a model checkpoint.
+def _model_identity(config: Mapping[str, Any], checkpoint: str | Path) -> dict[str, Any]:
+    """Build the internal reproducibility identity for a model checkpoint.
 
     Args:
         config: Resolved experiment configuration containing model, data and
@@ -42,11 +32,10 @@ def model_manifest(config: Mapping[str, Any], checkpoint: str | Path) -> dict[st
     """
     if not isinstance(config, Mapping):
         raise TypeError("config must be a mapping")
-    checkpoint_path = Path(checkpoint).expanduser()
-    if not checkpoint_path.is_absolute() and config.get("_config_dir"):
-        checkpoint_path = Path(str(config["_config_dir"])) / checkpoint_path
-    checkpoint_path = checkpoint_path.resolve()
-    payload = {key: value for key, value in config.items() if not str(key).startswith("_")}
+    checkpoint_path = resolve_config_path(config, checkpoint)
+    payload = public_config(config)
+    payload.pop("run_id", None)
+    payload.pop("config_version", None)
     repo_root = _find_repo_root(checkpoint_path, Path(str(config.get("_config_dir", "."))))
     try:
         if repo_root is None:
@@ -118,8 +107,8 @@ def experiment_manifest(
     if isinstance(selected_run_id, str) and not selected_run_id.strip():
         raise ValueError("run_id must be a non-empty string or None")
 
-    identity = model_manifest(dict(config), checkpoint)
-    public_config = {key: value for key, value in config.items() if not str(key).startswith("_")}
+    identity = _model_identity(config, checkpoint)
+    persisted_config = public_config(config)
     config_version = config.get("config_version") or identity["config_sha256"][:12]
     manifest = {
         "schema_version": 1,
@@ -135,7 +124,7 @@ def experiment_manifest(
         "config": {
             "version": str(config_version),
             "sha256": identity["config_sha256"],
-            "resolved": _redact_config(public_config),
+            "resolved": redact_config(persisted_config),
         },
         "training": {
             "seed": identity["seed"],
@@ -152,21 +141,6 @@ def experiment_manifest(
     }
     json.dumps(manifest, sort_keys=True)
     return manifest
-
-
-def _redact_config(value: Any, key: str = "") -> Any:
-    normalized = key.lower().replace("-", "_")
-    if normalized in _SENSITIVE_CONFIG_NAMES or any(
-        normalized.endswith(f"_{suffix}") for suffix in _SENSITIVE_CONFIG_NAMES
-    ):
-        return "<redacted>"
-    if isinstance(value, Mapping):
-        return {str(child_key): _redact_config(child_value, str(child_key)) for child_key, child_value in value.items()}
-    if isinstance(value, list):
-        return [_redact_config(item) for item in value]
-    if isinstance(value, tuple):
-        return [_redact_config(item) for item in value]
-    return value
 
 
 def _find_repo_root(*locations: Path) -> Path | None:

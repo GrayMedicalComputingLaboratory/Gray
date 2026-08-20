@@ -64,8 +64,11 @@ def remove_background(
         candidates = colors.reshape(
             (colors.shape[0],) + (1,) * len(batch_shape) + (channel_count,) + (1,) * len(axes)
         )
-        matches = np.any(np.abs(ordered[None, ...] - candidates) <= tolerance, axis=0)
-        matches = np.all(matches, axis=len(batch_shape))
+        channel_matches = np.all(
+            np.abs(ordered[None, ...] - candidates) <= tolerance,
+            axis=1 + len(batch_shape),
+        )
+        matches = np.any(channel_matches, axis=0)
     foreground = ~matches
     if prefix_shape:
         foreground = np.any(foreground, axis=tuple(range(len(prefix_shape) - 1)))

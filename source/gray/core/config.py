@@ -1,6 +1,7 @@
 """YAML configuration loading with explicit, portable path resolution."""
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -41,6 +42,8 @@ def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[s
         raise ValueError("Gray accepts one self-contained experiment YAML; Hydra defaults are not supported")
     with initialize_config_dir(version_base=None, config_dir=str(source.parent)):
         composed = compose(config_name=source.stem, overrides=list(overrides))
+    if "_config_dir" in composed:
+        raise ValueError("_config_dir is reserved and cannot be configured")
     result = OmegaConf.to_container(composed, resolve=True, throw_on_missing=True)
     if not isinstance(result, dict):
         raise ValueError("configuration root must resolve to a mapping")
@@ -53,7 +56,7 @@ def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[s
     return result, source
 
 
-def resolve_path(config: dict[str, Any], value: str | Path) -> Path:
+def resolve_path(config: Mapping[str, Any], value: str | Path) -> Path:
     """Resolve a path relative to the configuration file directory.
 
     Args:

@@ -1,6 +1,7 @@
 """Resample a SimpleITK volume to a target physical spacing."""
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 import SimpleITK as sitk
@@ -35,8 +36,8 @@ def resample_volume(image: sitk.Image, target_spacing: Sequence[float], interpol
         raise TypeError("image must be a SimpleITK Image")
     source_spacing = get_spacing(image)
     spacing = tuple(float(value) for value in target_spacing)
-    if len(spacing) != image.GetDimension() or any(value <= 0 for value in spacing):
-        raise ValueError("target_spacing must match image dimension and contain positive values")
+    if len(spacing) != image.GetDimension() or any(not math.isfinite(value) or value <= 0 for value in spacing):
+        raise ValueError("target_spacing must match image dimension and contain finite positive values")
     interpolators = {
         "nearest": sitk.sitkNearestNeighbor,
         "linear": sitk.sitkLinear,

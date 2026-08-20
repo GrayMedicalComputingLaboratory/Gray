@@ -2,7 +2,7 @@
 
 from .artifacts import artifact_dir
 from .clearml import Experiment
-from .manifest import experiment_manifest, model_manifest
+from .manifest import experiment_manifest
 from .report import experiment_report
 
-__all__ = ["Experiment", "artifact_dir", "experiment_manifest", "experiment_report", "model_manifest"]
+__all__ = ["Experiment", "artifact_dir", "experiment_manifest", "experiment_report"]

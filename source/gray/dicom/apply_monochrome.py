@@ -34,5 +34,5 @@ def apply_monochrome(image: sitk.Image, photometric_interpretation: str | None =
     statistics = sitk.StatisticsImageFilter()
     statistics.Execute(image)
     minimum, maximum = statistics.GetMinimum(), statistics.GetMaximum()
-    inverted = float(maximum + minimum) - sitk.Cast(image, sitk.sitkFloat32)
+    inverted = float(maximum + minimum) - sitk.Cast(image, sitk.sitkFloat64)
     return sitk.Cast(inverted, image.GetPixelID())

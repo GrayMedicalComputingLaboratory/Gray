@@ -46,9 +46,6 @@ def tta(
     """
     if dim not in {"2d", "3d"}:
         raise ValueError("dim must be '2d' or '3d'")
-    minimum_ndim = 2 if dim == "2d" else 3
-    if not hasattr(sample, "ndim") or sample.ndim < minimum_ndim:
-        raise ValueError(f"{dim} sample must have at least {minimum_ndim} dimensions with H, W last")
     if not isinstance(horizontal_flip, bool) or not isinstance(vertical_flip, bool):
         raise TypeError("horizontal_flip and vertical_flip must be booleans")
 
@@ -61,6 +58,9 @@ def tta(
     is_torch = torch is not None and isinstance(sample, torch.Tensor)
     if not is_numpy and not is_torch:
         raise TypeError("sample must be a numpy.ndarray or torch.Tensor")
+    minimum_ndim = 2 if dim == "2d" else 3
+    if sample.ndim < minimum_ndim:
+        raise ValueError(f"{dim} sample must have at least {minimum_ndim} dimensions with H, W last")
 
     normalized_angles: list[int] = []
     for angle in rotate90_angles:

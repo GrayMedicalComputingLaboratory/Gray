@@ -50,13 +50,26 @@ class GrayLogger(logging.LoggerAdapter):
             return
         super().log(level, msg, *args, **kwargs)
         if self._tracker is not None:
-            message = str(msg)
-            if args:
-                try:
-                    message = message % args
-                except (TypeError, ValueError):
-                    message = " ".join((message, *(str(value) for value in args)))
-            self._tracker.report_text(message, level=level, print_console=False)
+            record = logging.LogRecord(
+                name=self.logger.name,
+                level=level,
+                pathname="",
+                lineno=0,
+                msg=msg,
+                args=args,
+                exc_info=None,
+            )
+            self._tracker.report_text(record.getMessage(), level=level, print_console=False)
+
+    def close(self) -> None:
+        """Close and detach this logger's handlers.
+
+        Returns:
+            None. Subsequent calls are safe and have no effect.
+        """
+        for handler in tuple(self.logger.handlers):
+            self.logger.removeHandler(handler)
+            handler.close()
 
     def success(self, message: object, *args: object, **kwargs: Any) -> None:
         """Log a successful operation with a green emphasized console style.

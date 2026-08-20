@@ -9,7 +9,8 @@ from gray.utils.io import write_json
 from gray.utils.logging import GrayLogger, get_logger
 
 from .artifacts import artifact_dir
-from .manifest import _redact_config, experiment_manifest
+from ._config import public_config, redact_config, resolve_config_path
+from .manifest import experiment_manifest
 from .report import experiment_report
 
 
@@ -84,9 +85,10 @@ class Experiment:
         if normalized_tags:
             self._task.add_tags(normalized_tags)
         self._task.connect_configuration(
-            configuration=_redact_config({key: value for key, value in config.items() if not str(key).startswith("_")}),
+            configuration=redact_config(public_config(config)),
             name="Resolved Config",
         )
+        self._loggers: list[GrayLogger] = []
         self._closed = False
 
     @property
@@ -112,7 +114,9 @@ class Experiment:
         """
         self._ensure_open()
         destination = Path(output_dir).expanduser() if output_dir is not None else _default_log_path(self._config)
-        return get_logger(name, destination, tracker=self._task.get_logger())
+        logger = get_logger(name, destination, tracker=self._task.get_logger())
+        self._loggers.append(logger)
+        return logger
 
     def complete(
         self,
@@ -140,19 +144,24 @@ class Experiment:
             TypeError: If manifest values are not JSON serializable.
         """
         self._ensure_open()
-        checkpoint_path = _resolve_checkpoint(self._config, checkpoint)
+        checkpoint_path = resolve_config_path(self._config, checkpoint)
         manifest = experiment_manifest(
             self._config,
             checkpoint_path,
             evaluation=evaluation,
             run_id=self.run_id,
         )
-        destination = Path(manifest_path).expanduser() if manifest_path is not None else _default_manifest_path(self._config)
+        destination = (
+            resolve_config_path(self._config, manifest_path)
+            if manifest_path is not None
+            else _default_manifest_path(self._config)
+        )
         write_json(destination, manifest)
         self._task.upload_artifact("experiment_manifest", artifact_object=str(destination.resolve()))
         self._task.upload_artifact("checkpoint", artifact_object=str(checkpoint_path))
         if print_report:
             experiment_report(self._config, manifest=manifest)
+        self._close_loggers()
         self._task.close()
         self._closed = True
         return manifest
@@ -169,12 +178,14 @@ class Experiment:
         self._ensure_open()
         _validate_name(reason, "reason")
         self._task.mark_failed(status_reason=reason)
+        self._close_loggers()
         self._task.close()
         self._closed = True
 
     def close(self) -> None:
         """Close the ClearML Task without uploading final model artifacts."""
         if not self._closed:
+            self._close_loggers()
             self._task.close()
             self._closed = True
 
@@ -194,6 +205,11 @@ class Experiment:
     def _ensure_open(self) -> None:
         if self._closed:
             raise RuntimeError("experiment is already closed")
+
+    def _close_loggers(self) -> None:
+        for logger in self._loggers:
+            logger.close()
+        self._loggers.clear()
 
 
 def _clearml_task_class() -> Any:
@@ -221,15 +237,6 @@ def _normalize_tags(tags: Any) -> list[str]:
         _validate_name(tag, "tag")
         normalized.append(tag.strip())
     return normalized
-
-
-def _resolve_checkpoint(config: Mapping[str, Any], checkpoint: str | Path) -> Path:
-    path = Path(checkpoint).expanduser()
-    if not path.is_absolute() and config.get("_config_dir"):
-        path = Path(str(config["_config_dir"])) / path
-    return path.resolve()
-
-
 def _default_manifest_path(config: Mapping[str, Any]) -> Path:
     return artifact_dir(dict(config), "experiment", create=True) / "manifest.json"
 

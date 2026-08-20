@@ -27,8 +27,19 @@ def artifact_dir(config: dict[str, Any], stage: str, create: bool = False) -> Pa
     stage_path = Path(stage)
     if not stage or stage_path.is_absolute() or stage_path.name != stage or stage in {".", ".."}:
         raise ValueError(f"invalid artifact stage: {stage!r}")
+    experiment_id = config["experiment_id"]
+    if not isinstance(experiment_id, str):
+        raise TypeError("experiment_id must be a string")
+    experiment_path = Path(experiment_id)
+    if (
+        not experiment_id
+        or experiment_path.is_absolute()
+        or experiment_path.name != experiment_id
+        or experiment_id in {".", ".."}
+    ):
+        raise ValueError(f"invalid experiment_id: {experiment_id!r}")
     output_root = resolve_path(config, config["project"]["output_root"])
-    path = output_root / config["experiment_id"] / stage
+    path = output_root / experiment_id / stage
     if create:
         path.mkdir(parents=True, exist_ok=True)
     return path

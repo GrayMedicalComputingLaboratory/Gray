@@ -1,6 +1,8 @@
 """Read physical voxel spacing from a SimpleITK image."""
 from __future__ import annotations
 
+import math
+
 import SimpleITK as sitk
 
 
@@ -20,6 +22,6 @@ def get_spacing(image: sitk.Image) -> tuple[float, ...]:
     if not isinstance(image, sitk.Image):
         raise TypeError("image must be a SimpleITK Image")
     spacing = tuple(float(value) for value in image.GetSpacing())
-    if not spacing or any(value <= 0 for value in spacing):
-        raise ValueError("image spacing must contain positive values")
+    if not spacing or any(not math.isfinite(value) or value <= 0 for value in spacing):
+        raise ValueError("image spacing must contain finite positive values")
     return spacing

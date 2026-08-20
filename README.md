@@ -12,7 +12,7 @@
 # Gray 中文说明
 
 Gray 是 Gray Medical Computing Laboratory 的轻量、可复用训练研究基础框架。
-它提供配置身份、可复现性、指标、产物路径、生命周期调度和扩展契约；模型、数据集、增强、损失和推理仍由具体项目负责。
+它提供配置身份、可复现性、产物路径、生命周期调度和扩展契约；模型、数据集、指标、增强、损失和推理仍由具体项目负责。
 
 ## 文档
 
@@ -108,52 +108,17 @@ logits = [model(variant) for variant in variants.values()]
 可选的 `gray.dicom` 模块只使用 SimpleITK。项目负责 Series 选择和文件排序，Gray 负责像素强度与空间处理。
 
 ```python
-from gray.dicom import apply_monochrome, apply_rescale, apply_window_level
+from gray.dicom import apply_monochrome, apply_window_level
 from gray.dicom import get_spacing, read_series, resample_volume
 
 image = read_series(ordered_dicom_files)
-image = apply_rescale(image)
 image = apply_monochrome(image)
 image = apply_window_level(image, window_width=400, window_center=40)
 image = resample_volume(image, target_spacing=(1.0, 1.0, 1.0))
 spacing = get_spacing(image)
 ```
 
-mask 和 label 使用 `interpolator="nearest"`；已完成物理值转换时不要重复调用 `apply_rescale`。
-
-## 指标与临床评估
-
-支持 Accuracy、balanced accuracy、Precision、Recall、F1、混淆矩阵、Specificity、Sensitivity、PPV、NPV、ROC-AUC、PR-AUC、log loss、Brier score、校准曲线、bootstrap 置信区间和阈值报告。
-
-```python
-from gray.metrics import clinical_binary_metrics
-
-report = clinical_binary_metrics(
-    targets=["Non-BCC", "BCC", "BCC"],
-    predictions=["Non-BCC", "BCC", "Non-BCC"],
-    probabilities=[0.08, 0.91, 0.42],
-    positive_label="BCC",
-    n_bootstrap=2_000,
-)
-```
-
-临床报告要求观测到两个类别；单类别 fold 应使用通用 classification metrics。
-
-## 绘图
-
-`gray.plot` 提供混淆矩阵、指标与置信区间、ROC-AUC、PR 曲线、校准曲线和阈值分析。所有绘图函数返回 Matplotlib `Figure`，可通过 `save_path` 保存。
-
-```python
-from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
-
-plot_confusion_matrix(targets, predictions, labels=["Non-BCC", "BCC"],
-                      normalize=True, save_path="figures/confusion_matrix.png")
-plot_roc_auc(targets, probabilities, positive_label="BCC", ci=True,
-             n_bootstrap=2_000, save_path="figures/roc_auc.png")
-plot_metrics({"f1_macro": 0.82, "roc_auc": 0.89},
-             ci={"roc_auc": {"lower": 0.81, "upper": 0.95}},
-             save_path="figures/metrics.png")
-```
+mask 和 label 使用 `interpolator="nearest"`。SimpleITK 读取 DICOM 时已经应用 rescale slope/intercept，Gray 不重复转换。
 
 ## 边界
 
@@ -164,7 +129,7 @@ Gray 不规定通用图像 CSV、模型基类、loss、Web UI、推理服务、3
 # English README
 
 Gray is a small, reusable training-research foundation for Gray Medical Computing Laboratory.
-It provides configuration identity, reproducibility, metrics, artifact paths, lifecycle dispatching and extension contracts. Models, datasets, augmentation, losses and inference remain owned by each project.
+It provides configuration identity, reproducibility, artifact paths, lifecycle dispatching and extension contracts. Models, datasets, metrics, augmentation, losses and inference remain owned by each project.
 
 ## Documentation
 
@@ -230,17 +195,7 @@ logits = [model(variant) for variant in variants.values()]
 
 ## DICOM Processing
 
-The optional `gray.dicom` module uses SimpleITK only. The project selects and orders the Series; Gray handles pixel intensity and spatial processing. Use `interpolator="nearest"` for masks and labels, and do not apply rescaling twice.
-
-## Metrics and Clinical Assessment
-
-Gray supports accuracy, balanced accuracy, precision, recall, F1, confusion matrices, specificity, sensitivity, PPV, NPV, ROC-AUC, PR-AUC, log loss, Brier score, calibration curves, bootstrap confidence intervals and threshold reports.
-
-`clinical_binary_metrics` requires both observed classes. Use the general classification metrics for a single-class fold diagnostic.
-
-## Plotting
-
-`gray.plot` provides confusion matrices, metric bars with confidence intervals, ROC-AUC, precision-recall, calibration and threshold plots. Every plotting function returns a Matplotlib `Figure` and can save through `save_path`.
+The optional `gray.dicom` module uses SimpleITK only. The project selects and orders the Series; Gray handles pixel polarity, windowing, and spatial processing. Use `interpolator="nearest"` for masks and labels. SimpleITK already applies DICOM rescale slope/intercept while reading.
 
 ## Boundaries
 

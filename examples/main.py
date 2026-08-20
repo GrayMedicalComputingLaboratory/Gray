@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from gray import load_config
-from gray.experiment import Experiment, artifact_dir, experiment_report
+from gray.experiment import Experiment, artifact_dir
 from gray.runtime import seed_everything
-from gray.utils import GrayLogger, write_json
+from gray.utils.io import write_json
+from gray.utils.logging import GrayLogger
 
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "demo.yaml"
@@ -26,16 +27,18 @@ def train(config: dict[str, Any], logger: GrayLogger) -> tuple[Path, dict[str, A
     """
     seed_everything(config["train"]["seed"])
     epochs = config["train"]["epochs"]
+    if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
+        raise ValueError("train.epochs must be a positive integer")
     validation_auc = 0.0
 
     for epoch in range(1, epochs + 1):
         train_loss = 1.0 / epoch
-        validation_auc = 0.80 + epoch * 0.03
+        validation_auc = min(1.0, 0.80 + epoch * 0.03)
         logger.info("epoch=%s/%s", epoch, epochs)
         logger.metric("train_loss", train_loss, iteration=epoch)
         logger.metric("validation_auc", validation_auc, iteration=epoch)
 
-    checkpoint = artifact_dir(config, "train", create=True) / "model.ckpt"
+    checkpoint = artifact_dir(config, "train", create=True) / "model.json"
     write_json(
         checkpoint,
         {
@@ -56,7 +59,6 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     config, _ = load_config(args.config, args.override)
-    experiment_report(config)
 
     with Experiment(config) as experiment:
         logger = experiment.get_logger("train")
