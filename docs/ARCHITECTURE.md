@@ -13,6 +13,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/preprocess/remove_background.py` | Crop margins matching one or more background colors from selected NumPy image axes. | Dataset policy, image decoding or clinical intensity normalization. |
 | `source/gray/experiment/artifacts.py` | Deterministic local artifact directories by experiment and stage. | File schemas, artifact uploads or training logic. |
 | `source/gray/experiment/manifest.py` | Structured Experiment-Dataset-Code-Config-Training-Model-Evaluation lineage manifests. | Artifact persistence, training logic or remote tracking SDK calls. |
+| `source/gray/experiment/report.py` | Rich configuration, environment and optional experiment lineage reporting. | Manifest mutation, artifact persistence or model promotion decisions. |
 | `source/gray/experiment/clearml.py` | ClearML Task lifecycle, configuration linkage and final experiment artifact upload. | Training loops, metric definitions, model promotion or deployment. |
 | `source/gray/runtime/device.py` | Explicit CPU/CUDA device validation. | Seeding, model execution or CUDA memory policy. |
 | `source/gray/runtime/reproducibility.py` | Process, DataLoader worker and PyTorch generator reproducibility controls. | Data loading policy, logging or artifact IO. |

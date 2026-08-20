@@ -10,6 +10,7 @@ from gray.utils.logging import GrayLogger, get_logger
 
 from .artifacts import artifact_dir
 from .manifest import _redact_config, experiment_manifest
+from .report import experiment_report
 
 
 class Experiment:
@@ -119,6 +120,7 @@ class Experiment:
         *,
         evaluation: Mapping[str, Any] | None = None,
         manifest_path: str | Path | None = None,
+        print_report: bool = True,
     ) -> dict[str, Any]:
         """Finalize the run, upload artifacts, and close the ClearML Task.
 
@@ -127,6 +129,7 @@ class Experiment:
             evaluation: Optional evaluation status and metrics.
             manifest_path: JSON destination. Defaults to
                 ``<output_root>/<experiment_id>/experiment/manifest.json``.
+            print_report: Print the Rich experiment lineage report when true.
 
         Returns:
             The structured experiment manifest uploaded to ClearML.
@@ -148,6 +151,8 @@ class Experiment:
         write_json(destination, manifest)
         self._task.upload_artifact("experiment_manifest", artifact_object=str(destination.resolve()))
         self._task.upload_artifact("checkpoint", artifact_object=str(checkpoint_path))
+        if print_report:
+            experiment_report(self._config, manifest=manifest)
         self._task.close()
         self._closed = True
         return manifest
