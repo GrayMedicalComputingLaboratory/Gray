@@ -88,17 +88,17 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
     <section id="experiment">
       <h2>Experiment</h2>
       <p class="lead">统一管理 Experiment、Dataset、Git Code、Config、Training、Model 与 Evaluation 的可追溯关系。</p>
-      <div class="api green"><h3><code>gray.experiment.Experiment</code></h3><p><code>Experiment(config, *, project_name=None, task_name=None, tags=None, output_uri=None, auto_connect_frameworks=True)</code></p><table class="contract"><tr><th>初始化</th><td>创建新的 ClearML training Task，以 <code>experiment_id</code> 作为默认 Task Name，并将 ClearML Task ID 暴露为 <code>run_id</code>。</td></tr><tr><th>配置</th><td><code>project_name</code>、<code>tags</code>、<code>output_uri</code> 可显式传入或读取 <code>config.tracking</code>；连接到 ClearML 前自动移除内部字段并遮蔽凭据。</td></tr><tr><th>完成</th><td><code>complete(checkpoint, evaluation=...)</code> 生成 <code>experiment_manifest.json</code>，上传清单和 checkpoint，打印谱系并关闭 Task。</td></tr><tr><th>失败</th><td><code>fail(reason)</code> 在 ClearML 标记失败；作为上下文管理器使用时，未捕获异常会自动标记失败。</td></tr><tr><th>原生 SDK</th><td><code>experiment.task</code> 返回 ClearML Task，可使用 <code>get_logger()</code> 上报指标、曲线和图像。</td></tr></table></div>
+      <div class="api green"><h3><code>gray.experiment.Experiment</code></h3><p><code>Experiment(config, *, project_name=None, task_name=None, tags=None, output_uri=None, auto_connect_frameworks=True)</code></p><table class="contract"><tr><th>初始化</th><td>创建新的 ClearML training Task，以 <code>experiment_id</code> 作为默认 Task Name，并将 ClearML Task ID 暴露为 <code>run_id</code>。</td></tr><tr><th>配置</th><td><code>project_name</code>、<code>tags</code>、<code>output_uri</code> 可显式传入或读取 <code>config.tracking</code>；连接到 ClearML 前自动移除内部字段并遮蔽凭据。</td></tr><tr><th>日志</th><td><code>get_logger(name)</code> 返回统一 logger：终端显示 Rich 颜色、写入本地 <code>run.log</code>、同步纯文本到 ClearML；<code>metric(..., iteration=...)</code> 同时生成 ClearML 标量曲线。</td></tr><tr><th>完成</th><td><code>complete(checkpoint, evaluation=...)</code> 生成 <code>experiment_manifest.json</code>，上传清单和 checkpoint，打印谱系并关闭 Task。</td></tr><tr><th>失败</th><td><code>fail(reason)</code> 在 ClearML 标记失败；作为上下文管理器使用时，未捕获异常会自动标记失败。</td></tr><tr><th>原生 SDK</th><td><code>experiment.task</code> 仍返回 ClearML Task，用于 Gray 没有封装的曲线、图片和表格接口。</td></tr></table></div>
       <div class="api green"><h3><code>gray.experiment.experiment_manifest</code></h3><p><code>experiment_manifest(config, checkpoint, *, evaluation=None, run_id=None) -&gt; dict</code></p><table class="contract"><tr><th>关系</th><td>显式建立 <code>Experiment → Dataset / Git Code / Config → Training → Model → Evaluation</code> 谱系。</td></tr><tr><th>Run ID</th><td>可传 ClearML Task ID；不传时读取 <code>config.run_id</code>，与作为实验方案名的 <code>experiment_id</code> 分离。</td></tr><tr><th>身份</th><td>保存数据版本、Git commit、配置版本及 SHA-256、checkpoint SHA-256、模型版本、训练 seed/fold 和评估结果。</td></tr><tr><th>输出</th><td>带 <code>schema_version</code> 的 JSON 可序列化字典，可保存为文件或上传实验追踪系统。</td></tr></table></div>
       <div class="api green"><h3><code>gray.experiment.experiment_report</code></h3><p><code>experiment_report(manifest, *, console=None) -&gt; None</code></p><p>以 Rich 树和身份表显示 Experiment、输入版本、训练 Run、模型和评估状态。</p></div>
       <pre data-language="python">from gray.experiment import Experiment
 
 experiment = Experiment(config)
-clearml_logger = experiment.task.get_logger()
+logger = experiment.get_logger("train")
 
-clearml_logger.report_scalar(
-    title="Metrics", series="validation_auc", value=0.93, iteration=10
-)
+logger.info("开始训练")
+logger.metric("validation_auc", 0.93, iteration=10)
+logger.success("训练完成")
 manifest = experiment.complete(
     checkpoint,
     evaluation={"status": "passed", "roc_auc": 0.93},
@@ -192,7 +192,7 @@ training_report(config)</pre>
       <div class="api"><h3><code>gray.utils.seed_everything</code></h3><p><code>seed_everything(seed: int, deterministic: bool = True) -&gt; None</code></p><p>固定可用的 Python、NumPy、PyTorch、CUDA 和 cuDNN 状态；<code>deterministic=True</code> 会关闭 cuDNN benchmark 并请求确定性算法。函数只为子进程导出 <code>PYTHONHASHSEED</code>；当前解释器的 hash seed 必须在启动 Python 前设置。</p></div>
       <div class="api"><h3><code>gray.utils.seed_worker</code></h3><p><code>seed_worker(worker_id) -&gt; None</code></p><p>用于 PyTorch <code>DataLoader(worker_init_fn=...)</code>，根据 worker seed 固定 Python 与 NumPy。</p></div>
       <div class="api"><h3><code>gray.utils.torch_generator</code></h3><p><code>torch_generator(seed) -&gt; torch.Generator</code></p><p>返回可传给 <code>DataLoader(generator=...)</code> 的 PyTorch Generator。</p></div>
-      <div class="api"><h3><code>gray.utils.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path) -&gt; GrayLogger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录。</td></tr><tr><th>输出</th><td><span class="type">GrayLogger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr><tr><th>语义方法</th><td><code>success(message)</code> 使用绿色粗体；<code>metric(name, value)</code> 使用青色粗体并记录为稳定的 <code>name=value</code>；<code>warning</code> 为黄色，<code>error</code> 为红色粗体。</td></tr><tr><th>文件日志</th><td>只写纯文本，不包含 Rich 颜色或样式标签。</td></tr></table></div>
+      <div class="api"><h3><code>gray.utils.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path, *, tracker=None) -&gt; GrayLogger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录；可选 ClearML Logger-compatible <code>tracker</code>。</td></tr><tr><th>输出</th><td><span class="type">GrayLogger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr><tr><th>语义方法</th><td><code>success(message)</code> 使用绿色粗体；<code>metric(name, value, iteration=0, title="Metrics")</code> 使用青色粗体；<code>warning</code> 为黄色，<code>error</code> 为红色粗体。</td></tr><tr><th>ClearML</th><td>建议通过 <code>Experiment.get_logger()</code> 获取：所有文本同步到 ClearML，metric 还会上报标量曲线；网页保存纯文本，不保留终端颜色。</td></tr><tr><th>文件日志</th><td>只写纯文本，不包含 Rich 颜色或样式标签。</td></tr></table></div>
       <pre data-language="python">from gray.utils import get_logger
 
 logger = get_logger("train", output_dir)
@@ -307,7 +307,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.core.config.artifact_dir": "core/config.py#L76",
       "gray.core.device.resolve_device": "core/device.py#L5",
       "gray.core.provenance.sha256": "core/provenance.py#L29",
-      "gray.experiment.Experiment": "experiment/clearml.py#L15",
+      "gray.experiment.Experiment": "experiment/clearml.py#L16",
       "gray.experiment.experiment_manifest": "experiment/manifest.py#L24",
       "gray.experiment.experiment_report": "experiment/report.py#L14",
       "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
@@ -317,7 +317,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.utils.seed_everything": "utils/seed_everything.py#L10",
       "gray.utils.seed_worker": "utils/seed_worker.py#L9",
       "gray.utils.torch_generator": "utils/torch_generator.py#L7",
-      "gray.utils.get_logger": "utils/logging.py#L82",
+      "gray.utils.get_logger": "utils/logging.py#L114",
       "gray.utils.write_json / read_json": "utils/io.py#L12",
       "gray.utils.tta": "utils/tta.py#L10"
     };

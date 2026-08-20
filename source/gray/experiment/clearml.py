@@ -7,6 +7,7 @@ from typing import Any
 
 from gray.core.config import resolve_path
 from gray.utils.io import write_json
+from gray.utils.logging import GrayLogger, get_logger
 
 from .manifest import _redact_config, experiment_manifest
 from .report import experiment_report
@@ -78,6 +79,7 @@ class Experiment:
             output_uri=selected_output_uri,
             auto_connect_arg_parser=False,
             auto_connect_frameworks=auto_connect_frameworks,
+            auto_connect_streams=False,
         )
         if normalized_tags:
             self._task.add_tags(normalized_tags)
@@ -96,6 +98,21 @@ class Experiment:
     def task(self) -> Any:
         """Return the underlying ClearML Task for native reporting APIs."""
         return self._task
+
+    def get_logger(self, name: str = "experiment", output_dir: str | Path | None = None) -> GrayLogger:
+        """Create a Rich/file logger mirrored to this ClearML Task.
+
+        Args:
+            name: Logical local logger name.
+            output_dir: Local ``run.log`` directory. Defaults to the experiment's
+                ``logs`` artifact directory.
+
+        Returns:
+            A semantic logger writing to the terminal, local file, and ClearML.
+        """
+        self._ensure_open()
+        destination = Path(output_dir).expanduser() if output_dir is not None else _default_log_path(self._config)
+        return get_logger(name, destination, tracker=self._task.get_logger())
 
     def complete(
         self,
@@ -216,3 +233,8 @@ def _resolve_checkpoint(config: Mapping[str, Any], checkpoint: str | Path) -> Pa
 def _default_manifest_path(config: Mapping[str, Any]) -> Path:
     output_root = resolve_path(dict(config), config["project"]["output_root"])
     return output_root / str(config["experiment_id"]) / "experiment_manifest.json"
+
+
+def _default_log_path(config: Mapping[str, Any]) -> Path:
+    output_root = resolve_path(dict(config), config["project"]["output_root"])
+    return output_root / str(config["experiment_id"]) / "logs"

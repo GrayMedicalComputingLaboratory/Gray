@@ -39,6 +39,25 @@ class _GrayRichHandler(RichHandler):
 class GrayLogger(logging.LoggerAdapter):
     """Logger with semantic success and numeric metric operations."""
 
+    def __init__(self, logger: logging.Logger, extra: dict[str, Any] | None = None, *, tracker: Any = None) -> None:
+        """Wrap a standard logger and optionally mirror records to a tracker."""
+        super().__init__(logger, extra or {})
+        self._tracker = tracker
+
+    def log(self, level: int, msg: object, *args: object, **kwargs: Any) -> None:
+        """Write locally and mirror the formatted plain-text record to ClearML."""
+        if not self.isEnabledFor(level):
+            return
+        super().log(level, msg, *args, **kwargs)
+        if self._tracker is not None:
+            message = str(msg)
+            if args:
+                try:
+                    message = message % args
+                except (TypeError, ValueError):
+                    message = " ".join((message, *(str(value) for value in args)))
+            self._tracker.report_text(message, level=level, print_console=False)
+
     def success(self, message: object, *args: object, **kwargs: Any) -> None:
         """Log a successful operation with a green emphasized console style.
 
@@ -52,12 +71,14 @@ class GrayLogger(logging.LoggerAdapter):
         """
         self.log(SUCCESS, message, *args, **kwargs)
 
-    def metric(self, name: str, value: Real) -> None:
+    def metric(self, name: str, value: Real, *, iteration: int = 0, title: str = "Metrics") -> None:
         """Log one finite numeric metric using a stable ``name=value`` format.
 
         Args:
             name: Non-empty metric name, for example ``validation_auc``.
             value: Finite numeric metric value.
+            iteration: Non-negative training step or epoch used by ClearML.
+            title: Non-empty ClearML chart title.
 
         Returns:
             None.
@@ -76,10 +97,21 @@ class GrayLogger(logging.LoggerAdapter):
         numeric_value = float(value)
         if not math.isfinite(numeric_value):
             raise ValueError("metric value must be finite")
+        if isinstance(iteration, bool) or not isinstance(iteration, int):
+            raise TypeError("metric iteration must be an integer")
+        if iteration < 0:
+            raise ValueError("metric iteration must be non-negative")
+        if not isinstance(title, str):
+            raise TypeError("metric title must be a string")
+        title = title.strip()
+        if not title:
+            raise ValueError("metric title must not be empty")
         self.log(METRIC, "%s=%s", name, numeric_value)
+        if self._tracker is not None:
+            self._tracker.report_scalar(title=title, series=name, value=numeric_value, iteration=iteration)
 
 
-def get_logger(name: str, output_dir: Path) -> GrayLogger:
+def get_logger(name: str, output_dir: Path, *, tracker: Any = None) -> GrayLogger:
     """Create or reuse an isolated console and file logger.
 
     Repeated calls with the same name and resolved directory reuse the logger
@@ -89,6 +121,9 @@ def get_logger(name: str, output_dir: Path) -> GrayLogger:
     Args:
         name: Logical logger name.
         output_dir: Directory in which to create ``run.log``.
+        tracker: Optional ClearML Logger-compatible object. When provided, all
+            messages are mirrored with ``report_text`` and metrics are also
+            reported as scalar series.
 
     Returns:
         A non-propagating :class:`GrayLogger` configured at ``INFO`` level.
@@ -110,4 +145,4 @@ def get_logger(name: str, output_dir: Path) -> GrayLogger:
         file_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
         logger.addHandler(console_handler)
         logger.addHandler(file_handler)
-    return GrayLogger(logger, {})
+    return GrayLogger(logger, tracker=tracker)
