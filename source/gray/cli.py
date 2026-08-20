@@ -9,7 +9,8 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.pretty import Pretty
 
-from gray.core.config import artifact_dir, load_config
+from gray.core.config import load_config
+from gray.experiment import artifact_dir
 from gray.utils.io import write_json
 
 

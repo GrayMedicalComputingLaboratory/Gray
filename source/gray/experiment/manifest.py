@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from collections.abc import Mapping
 from pathlib import Path
+import subprocess
 from typing import Any
 
-from gray.core.provenance import model_manifest
+from gray.utils.hashing import sha256
 
 
 _SENSITIVE_CONFIG_NAMES = {
@@ -19,6 +21,57 @@ _SENSITIVE_CONFIG_NAMES = {
     "secret",
     "token",
 }
+
+
+def model_manifest(config: Mapping[str, Any], checkpoint: str | Path) -> dict[str, Any]:
+    """Build a flat reproducibility identity for a model checkpoint.
+
+    Args:
+        config: Resolved experiment configuration containing model, data and
+            training identity fields.
+        checkpoint: Model checkpoint to identify and hash.
+
+    Returns:
+        A JSON-serializable flat model identity dictionary.
+
+    Raises:
+        KeyError: If required configuration fields are missing.
+        FileNotFoundError: If the checkpoint does not exist.
+        OSError: If the checkpoint cannot be read.
+        TypeError: If public configuration values are not JSON serializable.
+    """
+    if not isinstance(config, Mapping):
+        raise TypeError("config must be a mapping")
+    checkpoint_path = Path(checkpoint).expanduser()
+    if not checkpoint_path.is_absolute() and config.get("_config_dir"):
+        checkpoint_path = Path(str(config["_config_dir"])) / checkpoint_path
+    checkpoint_path = checkpoint_path.resolve()
+    payload = {key: value for key, value in config.items() if not str(key).startswith("_")}
+    repo_root = _find_repo_root(checkpoint_path, Path(str(config.get("_config_dir", "."))))
+    try:
+        if repo_root is None:
+            raise OSError("no Git repository found")
+        git_commit = subprocess.check_output(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        git_commit = None
+    return {
+        "experiment_id": config["experiment_id"],
+        "model_version": config["model"]["model_version"],
+        "architecture": config["model"]["architecture"],
+        "data_version": config["data"]["data_version"],
+        "label_schema": config["data"]["label_schema"],
+        "seed": config["train"]["seed"],
+        "fold": config["train"].get("fold", "single"),
+        "config_sha256": hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest(),
+        "git_commit": git_commit,
+        "checkpoint": checkpoint_path.name,
+        "checkpoint_sha256": sha256(checkpoint_path),
+        "status": "candidate",
+    }
 
 
 def experiment_manifest(
@@ -114,3 +167,12 @@ def _redact_config(value: Any, key: str = "") -> Any:
     if isinstance(value, tuple):
         return [_redact_config(item) for item in value]
     return value
+
+
+def _find_repo_root(*locations: Path) -> Path | None:
+    for location in locations:
+        current = location if location.is_dir() else location.parent
+        for candidate in (current, *current.parents):
+            if (candidate / ".git").exists():
+                return candidate
+    return None

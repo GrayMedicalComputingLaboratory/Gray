@@ -5,10 +5,10 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from gray import artifact_dir, load_config
-from gray.experiment import Experiment
-from gray.report import training_report
-from gray.utils import GrayLogger, seed_everything, write_json
+from gray import load_config
+from gray.experiment import Experiment, artifact_dir, training_report
+from gray.runtime import seed_everything
+from gray.utils import GrayLogger, write_json
 
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "demo.yaml"

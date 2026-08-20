@@ -1,7 +1,7 @@
 """Gray: small, extensible computer-vision research framework."""
 
-from .core.config import artifact_dir, load_config
+from .core.config import load_config
 
 __version__ = "0.1.0"
 
-__all__ = ["artifact_dir", "load_config"]
+__all__ = ["load_config"]

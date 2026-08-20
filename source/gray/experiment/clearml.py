@@ -5,10 +5,10 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
-from gray.core.config import resolve_path
 from gray.utils.io import write_json
 from gray.utils.logging import GrayLogger, get_logger
 
+from .artifacts import artifact_dir
 from .manifest import _redact_config, experiment_manifest
 from .report import experiment_report
 
@@ -128,7 +128,7 @@ class Experiment:
             checkpoint: Trained model checkpoint to identify and upload.
             evaluation: Optional evaluation status and metrics.
             manifest_path: JSON destination. Defaults to
-                ``<output_root>/<experiment_id>/experiment_manifest.json``.
+                ``<output_root>/<experiment_id>/experiment/manifest.json``.
             print_report: Print the Rich experiment lineage report when true.
 
         Returns:
@@ -231,10 +231,8 @@ def _resolve_checkpoint(config: Mapping[str, Any], checkpoint: str | Path) -> Pa
 
 
 def _default_manifest_path(config: Mapping[str, Any]) -> Path:
-    output_root = resolve_path(dict(config), config["project"]["output_root"])
-    return output_root / str(config["experiment_id"]) / "experiment_manifest.json"
+    return artifact_dir(dict(config), "experiment", create=True) / "manifest.json"
 
 
 def _default_log_path(config: Mapping[str, Any]) -> Path:
-    output_root = resolve_path(dict(config), config["project"]["output_root"])
-    return output_root / str(config["experiment_id"]) / "logs"
+    return artifact_dir(dict(config), "logs", create=True)

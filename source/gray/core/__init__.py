@@ -1,5 +1,5 @@
-"""Stable framework lifecycle primitives."""
+"""Hydra configuration primitives."""
 
-from .provenance import model_manifest, sha256
+from .config import load_config, resolve_path
 
-__all__ = ["model_manifest", "sha256"]
+__all__ = ["load_config", "resolve_path"]

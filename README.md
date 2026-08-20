@@ -66,7 +66,7 @@ runtime:
 ```
 
 ```python
-from gray.utils import seed_everything
+from gray.runtime import seed_everything
 
 def train(config: dict, trial=None) -> dict:
     seed_everything(config["runtime"]["seed"])
@@ -91,7 +91,7 @@ Hydra 只解析一份自包含 YAML，不支持 `defaults`、配置组或自动�
 3D TTA 不反转或旋转 Z/depth 轴，只对每个 slice 的 H/W 平面执行相同变换。
 
 ```python
-from gray.utils import tta
+from gray.inference import tta
 
 variants = tta(
     volume,
@@ -198,7 +198,7 @@ running `clearml-init`, execute it with `python examples/main.py`.
 Each project declares its lifecycle entrypoints. Gray calls them with the resolved configuration dictionary.
 
 ```python
-from gray.utils import seed_everything
+from gray.runtime import seed_everything
 
 def train(config: dict, trial=None) -> dict:
     seed_everything(config["runtime"]["seed"])
@@ -221,7 +221,7 @@ Hydra accepts one self-contained YAML and does not support `defaults`, configura
 `tta` returns named 2D/3D inference variants; prediction aggregation remains project-owned. For 3D TTA, the Z/depth axis is never changed and the same in-plane transform is applied to every slice.
 
 ```python
-from gray.utils import tta
+from gray.inference import tta
 
 variants = tta(volume, dim="3d", horizontal_flip=True,
                rotate90_angles=[0, 90, 180, 270])
