@@ -12,6 +12,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/callbacks/early_stopping.py` | Framework-independent metric-based early stopping state. | Model calls, checkpoint writing or training-loop ownership. |
 | `source/gray/inference/ensemble.py` | One-call equal or weighted averaging of classification probabilities. | Model loading, forward passes, logits conversion or threshold policy. |
 | `source/gray/preprocess/remove_background.py` | Crop margins matching one or more background colors from selected NumPy image axes. | Dataset policy, image decoding or clinical intensity normalization. |
+| `source/gray/report/training_report.py` | Human-readable training configuration and environment version tables. | Training execution, artifact persistence or remote experiment tracking. |
 | `source/gray/utils/seed_everything.py` | Process-wide Python, NumPy and PyTorch random-state control. | DataLoader worker initialization, logging or IO. |
 | `source/gray/utils/seed_worker.py` | One PyTorch DataLoader worker's random-state control. | Global process seeding or IO. |
 | `source/gray/utils/torch_generator.py` | Seeded PyTorch `Generator` construction. | DataLoader configuration or global seeding. |

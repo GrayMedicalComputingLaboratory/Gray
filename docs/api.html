@@ -52,6 +52,7 @@
     <a href="#callbacks">Callbacks</a>
     <a href="#inference">Inference</a>
     <a href="#preprocess">Preprocess</a>
+    <a href="#report">Report</a>
     <a href="#utils">Utils</a>
     <a href="#tta">TTA</a>
     <a href="#dicom">DICOM / SimpleITK</a>
@@ -145,6 +146,24 @@ probabilities = Ensemble(
 
 cropped_image = remove_background(image, background_colors=[0, 255], tolerance=4)
 cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0, 1, 2))</pre>
+    </section>
+
+    <section id="report">
+      <h2>Report</h2>
+      <p class="lead">在训练开始时统一展示实际配置和运行环境，便于核对与复现。</p>
+      <div class="api green">
+        <h3><code>gray.report.training_report</code></h3>
+        <p><code>training_report(config, *, console=None) -&gt; None</code></p>
+        <table class="contract">
+          <tr><th>输入</th><td>解析后的配置 mapping；可选传入已有的 Rich <code>Console</code>。</td></tr>
+          <tr><th>配置表</th><td>嵌套字段展开为点分路径；密码、token、secret 和 access key 自动显示为 <code>&lt;redacted&gt;</code>。</td></tr>
+          <tr><th>环境表</th><td>显示 Python、操作系统、架构、解释器以及 Gray、PyTorch、Hydra、NumPy、SimpleITK、ClearML 等版本；未安装的可选包明确标记。</td></tr>
+          <tr><th>行为</th><td>只读取已安装包的元数据，不导入 PyTorch、SimpleITK 等重型库，也不写入文件。</td></tr>
+        </table>
+      </div>
+      <pre data-language="python">from gray.report import training_report
+
+training_report(config)</pre>
     </section>
 
     <section id="utils">
@@ -270,6 +289,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
       "gray.inference.Ensemble": "inference/ensemble.py#L12",
       "gray.preprocess.remove_background": "preprocess/remove_background.py#L11",
+      "gray.report.training_report": "report/training_report.py#L42",
       "gray.utils.seed_everything": "utils/seed_everything.py#L10",
       "gray.utils.seed_worker": "utils/seed_worker.py#L9",
       "gray.utils.torch_generator": "utils/torch_generator.py#L7",
