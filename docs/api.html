@@ -27,6 +27,9 @@
     .api > p, .api > table { margin-left:15px; margin-right:15px; } .api > p:last-child { margin-bottom:14px; }
     .contract { margin:12px 15px 15px; } .contract th { width:20%; } .contract td { color:#d1d7dc; } .type { display:inline-block; margin:0 3px 3px 0; padding:1px 5px; color:#cceaff; background:#244a63; border:1px solid #386b8c; border-radius:3px; font:12px ui-monospace,SFMono-Regular,Consolas,monospace; }
     pre { overflow:auto; margin:12px 0 0; padding:13px 15px; color:#dce2e7; background:#111519; border:1px solid #353d45; border-radius:4px; font-size:13px; }
+    pre .token-comment { color:#7f8b96; } pre .token-string { color:#d8b36a; } pre .token-keyword { color:#c792ea; }
+    pre .token-function { color:#82cfff; } pre .token-number { color:#f2a272; } pre .token-constant { color:#72d5a4; }
+    pre .token-command { color:#79d0c4; }
     table { width:100%; border-collapse:collapse; margin:12px 0; } th,td { padding:8px 9px; text-align:left; vertical-align:top; border-top:1px solid var(--line); } th { width:22%; color:#bdc6ce; background:#222830; font-weight:650; }
     .tag { display:inline-block; margin-left:6px; padding:1px 7px; color:#fff; background:#286a99; border-radius:10px; font-size:12px; } .note { padding:11px 13px; color:#ecd9a3; background:#322c1e; border-left:3px solid #c58b26; border-radius:0; }
     .search-hidden { display:none !important; }
@@ -58,7 +61,7 @@
     <section id="install">
       <h2>安装与约定</h2>
       <p class="lead">Gray 不包含项目专用模型、数据集和训练循环。项目通过 entrypoint 接入 Gray。</p>
-      <pre>python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"</pre>
+      <pre data-language="shell">python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"</pre>
       <div class="note">每个实验只维护一个 YAML；YAML 文件名就是 <code>experiment_id</code>。生成的 trial 配置只是运行快照，不是第二份人工配置。</div>
       <div class="api"><h3>类型速查 / Type guide</h3><table class="contract"><tr><th>标记</th><th>含义</th><th>典型值</th></tr><tr><td><span class="type">PathLike</span></td><td>字符串或 <code>pathlib.Path</code> 文件路径。</td><td><code>"configs/exp_00.yaml"</code></td></tr><tr><td><span class="type">Sequence[T]</span></td><td>列表、元组或其他可迭代序列；除非特别说明，不接受空序列。</td><td><code>["BCC", "Non-BCC"]</code></td></tr><tr><td><span class="type">ArrayLike</span></td><td>NumPy 数组或可转换为数组的一维/二维数值序列。</td><td><code>np.ndarray</code>、<code>list[float]</code></td></tr><tr><td><span class="type">torch.Tensor</span></td><td>PyTorch 张量；TTA 保留 dtype、device 和梯度语义。</td><td><code>[C,H,W]</code> 或 <code>[C,D,H,W]</code></td></tr><tr><td><span class="type">sitk.Image</span></td><td>SimpleITK 图像对象，携带 spacing、origin、direction 和 metadata。</td><td>DICOM volume</td></tr></table></div>
     </section>
@@ -70,7 +73,7 @@
         <p><code>load_config(path, overrides=()) -&gt; tuple[dict, Path]</code></p>
         <table><tr><th>输入</th><td><code>path</code>：单个 YAML 路径；<code>overrides</code>：Hydra 风格的 <code>key=value</code> 列表。</td></tr><tr><th>输出</th><td>解析后的普通字典和绝对配置路径；自动加入 <code>experiment_id</code>、<code>_config_dir</code>。</td></tr><tr><th>限制</th><td>不允许 <code>defaults</code>、配置组或自动切换工作目录。</td></tr></table>
       </div>
-      <pre>python -m gray.cli train --config configs/exp_00.yaml
+      <pre data-language="shell">python -m gray.cli train --config configs/exp_00.yaml
 python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.00003
       </pre>
       <p>项目 entrypoint 需返回字典，Gray 将其写入对应 stage 的 summary.json。</p>
@@ -93,7 +96,7 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
           <tr><th>异常</th><td>参数不合法或指标不是有限数值时抛出 <code>TypeError</code> / <code>ValueError</code>。</td></tr>
         </table>
       </div>
-      <pre>from gray.callbacks import EarlyStopping
+      <pre data-language="python">from gray.callbacks import EarlyStopping
 
 early_stopping = EarlyStopping(patience=5, mode="min")
 for epoch in range(epochs):
@@ -115,7 +118,7 @@ for epoch in range(epochs):
           <tr><th>限制</th><td>只接收范围为 <code>[0, 1]</code> 的概率，不接收 logits；多分类每行概率和必须为 1。</td></tr>
         </table>
       </div>
-      <pre>from gray.inference import Ensemble
+      <pre data-language="python">from gray.inference import Ensemble
 
 probabilities = Ensemble(
     model_a_probabilities,
@@ -138,7 +141,7 @@ probabilities = Ensemble(
           <tr><th>输出</th><td>包含前景的最小边界框视图；全为背景输入保持原数组和原形状。</td></tr>
         </table>
       </div>
-      <pre>from gray.preprocess import remove_background
+      <pre data-language="python">from gray.preprocess import remove_background
 
 cropped_image = remove_background(image, background_colors=[0, 255], tolerance=4)
 cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0, 1, 2))</pre>
@@ -170,7 +173,7 @@ cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0,
         <tr><td><code>log_loss</code></td><td>targets, probabilities, labels</td><td>float 或 None</td></tr>
         <tr><td><code>brier_score</code></td><td>targets, probabilities, labels?</td><td>float 或 None</td></tr>
       </table>
-      <pre>from gray.metrics import accuracy, roc_auc, classification_metrics
+      <pre data-language="python">from gray.metrics import accuracy, roc_auc, classification_metrics
 value = accuracy(targets, predictions)
 auc = roc_auc(targets, positive_probabilities, labels=["Non-BCC", "BCC"])
 report = classification_metrics(targets, predictions, positive_probabilities, ["Non-BCC", "BCC"])</pre>
@@ -190,7 +193,7 @@ report = classification_metrics(targets, predictions, positive_probabilities, ["
 
     <section id="tta">
       <h2>Test-Time Augmentation</h2>
-      <pre>from gray.utils import tta
+      <pre data-language="python">from gray.utils import tta
 variants = tta(volume, dim="3d", horizontal_flip=True,
                vertical_flip=False, rotate90_angles=[0, 90, 180, 270])
 logits = [model(value) for value in variants.values()]</pre>
@@ -206,7 +209,7 @@ logits = [model(value) for value in variants.values()]</pre>
       <div class="api"><h3><code>gray.plot.plot_pr_curve</code></h3><p><code>plot_pr_curve(targets, probabilities, positive_label=None, *, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>绘制二分类 Precision-Recall 曲线，并在 legend 显示 Average Precision / PR-AUC。</p></div>
       <div class="api"><h3><code>gray.plot.plot_calibration_curve</code></h3><p><code>plot_calibration_curve(targets, probabilities, positive_label=None, *, n_bins=10, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>调用现有 <code>gray.metrics.calibration_curve</code>，绘制可靠性曲线、完美校准对角线和 ECE。</p></div>
       <div class="api"><h3><code>gray.plot.plot_threshold_report</code></h3><p><code>plot_threshold_report(targets, probabilities, positive_label=None, *, thresholds=None, ax=None, save_path=None, dpi=180) -&gt; Figure</code></p><p>绘制 Sensitivity、Specificity、PPV、NPV 与正类 F1 的阈值关系，并标出 Youden-J 最优阈值；底层报告同时保留宏 F1。</p></div>
-      <pre>from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
+      <pre data-language="python">from gray.plot import plot_confusion_matrix, plot_metrics, plot_roc_auc
 
 plot_confusion_matrix(targets, predictions, labels=["Non-BCC", "BCC"],
                       normalize=True, save_path="figures/confusion_matrix.png")
@@ -230,7 +233,7 @@ plot_metrics({"f1_macro": 0.82, "roc_auc": 0.89},
       </table>
       <div class="api"><h3>DICOM 函数契约</h3><table class="contract"><tr><th>函数</th><th>支持输入</th><th>输出与约束</th></tr><tr><td><code>read_series</code></td><td><span class="type">Sequence[str | Path]</span>，已经选择且排序的 DICOM 文件。</td><td><span class="type">sitk.Image</span>；空序列抛出 <code>ValueError</code>，缺失文件抛出 <code>FileNotFoundError</code>。</td></tr><tr><td><code>get_spacing</code></td><td><span class="type">sitk.Image</span></td><td><span class="type">tuple[float, ...]</span>；所有 spacing 必须为正。</td></tr><tr><td><code>apply_rescale</code></td><td><span class="type">sitk.Image</span></td><td><span class="type">sitk.Image</span> float32；读取 DICOM slope/intercept metadata。</td></tr><tr><td><code>apply_monochrome</code></td><td><span class="type">sitk.Image</span>；可选 <span class="type">str | None</span> interpretation。</td><td><span class="type">sitk.Image</span>；只接受 <code>MONOCHROME1</code> / <code>MONOCHROME2</code>。</td></tr><tr><td><code>apply_window_level</code></td><td><span class="type">sitk.Image</span>，<span class="type">float</span> width、center、output_min、output_max。</td><td><span class="type">sitk.Image</span> float32；width 必须 > 0，output_max 必须 > output_min。</td></tr><tr><td><code>resample_volume</code></td><td><span class="type">sitk.Image</span>，<span class="type">Sequence[float]</span> target_spacing，<span class="type">str</span> interpolator。</td><td><span class="type">sitk.Image</span>；仅 <code>nearest</code>、<code>linear</code>、<code>bspline</code>。</td></tr></table></div>
       <div class="note">mask/label 使用 <code>interpolator="nearest"</code>；如果上游已经完成 rescale，不要重复调用 <code>apply_rescale</code>。<code>nearest</code> 保持输入 pixel type；<code>linear</code>/<code>bspline</code> 输出 float32，避免整数强制舍入插值结果。</div>
-      <div class="api"><h3>推荐处理顺序</h3><pre>image = read_series(ordered_paths)
+        <div class="api"><h3>推荐处理顺序</h3><pre data-language="python">image = read_series(ordered_paths)
 image = apply_rescale(image)              # stored -&gt; physical units
 image = apply_monochrome(image)           # MONOCHROME1 -&gt; 2
 image = apply_window_level(image, 400, 40)
@@ -267,6 +270,24 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.utils.write_json / read_json": "utils/io.py#L12",
       "gray.utils.tta": "utils/tta.py#L10"
     };
+    function escapeHtml(value) {
+      return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function highlightCode(source) {
+      var escaped = escapeHtml(source);
+      var pattern = /(#[^\n]*|\/\/[^\n]*|\"(?:\\.|[^\"])*\"|'(?:\\.|[^'])*')|\b(0x[\da-fA-F]+|\d+(?:\.\d+)?)\b|\b(True|False|None|null|undefined)\b|\b(from|import|def|return|for|in|if|else|elif|class|as|with|try|except|raise|and|or|not|new|const|var|let)\b|\b([A-Za-z_]\w*)(?=\s*\()|\b(python|pip|git|gray|npm|node)\b/g;
+      return escaped.replace(pattern, function (match, commentOrString, number, constant, keyword, func, command) {
+        if (commentOrString) return /^\s*(#|\/\/)/.test(commentOrString) ? '<span class="token-comment">' + commentOrString + '</span>' : '<span class="token-string">' + commentOrString + '</span>';
+        if (number) return '<span class="token-number">' + number + '</span>';
+        if (constant) return '<span class="token-constant">' + constant + '</span>';
+        if (keyword) return '<span class="token-keyword">' + keyword + '</span>';
+        if (func) return '<span class="token-function">' + func + '</span>';
+        return '<span class="token-command">' + command + '</span>';
+      });
+    }
+    document.querySelectorAll("pre[data-language]").forEach(function (block) {
+      block.innerHTML = highlightCode(block.textContent);
+    });
     document.querySelectorAll(".api h3 code").forEach(function (label) {
       var name = label.textContent.trim();
       var path = sources[name];
