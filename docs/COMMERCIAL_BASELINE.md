@@ -8,7 +8,7 @@ Gray is a commercial framework baseline, not a production medical-device release
 - Config filename defines `experiment_id`. The config directory and filename must agree.
 - All generated artifacts use `outputs/<experiment_id>/<stage>/` and stages are created only on write.
 - Device values are `cpu`, `cuda`, `cuda:N`, or non-negative GPU indexes. Invalid CUDA requests fail explicitly.
-- Each checkpoint has a `model_manifest.json` with model, architecture, data/schema identity and SHA-256.
+- Each training run has an `experiment_manifest.json` linking dataset, Git, config, run, model, checkpoint SHA-256 and evaluation identities.
 - Every command records a file log under the experiment `logs` stage.
 
 ## Required task-plugin responsibilities

@@ -81,7 +81,8 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
       <div class="api"><h3><code>gray.core.config.resolve_path</code></h3><p><code>resolve_path(config, value) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>config</code> 必须包含 <code>_config_dir</code>；相对路径从 YAML 所在目录解析，绝不依赖当前工作目录。</td></tr><tr><th>Returns</th><td>绝对路径；传入绝对路径时保持其语义。</td></tr></table></div>
       <div class="api"><h3><code>gray.core.config.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><table><tr><th>Parameters</th><td><code>stage</code> 只能是相对单级目录名，不能为空、绝对路径或包含 <code>..</code>；<code>create=True</code> 时创建目录。</td></tr><tr><th>Returns</th><td><code>output_root / experiment_id / stage</code>。</td></tr><tr><th>Raises</th><td>非法 stage 时抛出 <code>ValueError</code>。</td></tr></table></div>
       <div class="api"><h3><code>gray.core.device.resolve_device</code></h3><p><code>resolve_device(value: str | int) -&gt; str</code></p><table><tr><th>Accepted</th><td><code>"cpu"</code>、<code>"cuda"</code>、<code>"cuda:N"</code> 或非负 GPU 索引。</td></tr><tr><th>Returns</th><td>规范化设备名，例如 <code>cuda:0</code>。</td></tr><tr><th>Raises</th><td>设备格式错误抛出 <code>ValueError</code>；请求的 CUDA 不存在抛出 <code>RuntimeError</code>，不会静默回退 CPU。</td></tr></table></div>
-      <div class="api"><h3><code>gray.core.provenance.sha256</code> / <code>model_manifest</code></h3><p><code>sha256(path: Path) -&gt; str</code><br><code>model_manifest(config, checkpoint: Path) -&gt; dict</code></p><p>前者以流式方式计算文件哈希；后者记录实验、模型版本、数据版本、标签 schema、随机种子、fold、配置哈希、Git commit 和 checkpoint 哈希。checkpoint 相对路径按 <code>config._config_dir</code> 解析，Git commit 从 checkpoint/config 所在仓库读取，不依赖当前工作目录；找不到仓库时为 <code>None</code>。</p></div>
+      <div class="api"><h3><code>gray.core.provenance.sha256</code> / <code>model_manifest</code></h3><p><code>sha256(path: Path) -&gt; str</code><br><code>model_manifest(config, checkpoint: Path) -&gt; dict</code></p><p>前者以流式方式计算文件哈希；后者保留扁平模型身份清单，记录实验、模型版本、数据版本、标签 schema、随机种子、fold、配置哈希、Git commit 和 checkpoint 哈希。</p></div>
+      <div class="api green"><h3><code>gray.core.provenance.experiment_manifest</code></h3><p><code>experiment_manifest(config, checkpoint, *, evaluation=None, run_id=None) -&gt; dict</code></p><table class="contract"><tr><th>关系</th><td>显式建立 <code>Experiment → Dataset / Git Code / Config → Training → Model → Evaluation</code> 谱系。</td></tr><tr><th>Run ID</th><td>可传 ClearML Task ID；不传时读取 <code>config.run_id</code>，与作为实验方案名的 <code>experiment_id</code> 分离。</td></tr><tr><th>身份</th><td>保存数据版本、Git commit、配置版本及 SHA-256、checkpoint SHA-256、模型版本、训练 seed/fold 和评估结果。</td></tr><tr><th>输出</th><td>带 <code>schema_version</code> 的 JSON 可序列化字典，可保存为文件或上传实验追踪系统。</td></tr></table></div>
     </section>
 
     <section id="callbacks">
@@ -164,6 +165,23 @@ cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0,
       <pre data-language="python">from gray.report import training_report
 
 training_report(config)</pre>
+      <div class="api green">
+        <h3><code>gray.report.experiment_report</code></h3>
+        <p><code>experiment_report(manifest, *, console=None) -&gt; None</code></p>
+        <p>以 Rich 树和身份表显示 Experiment、输入版本、训练 Run、模型和评估状态，方便在训练结束后核对完整谱系。</p>
+      </div>
+      <pre data-language="python">from gray.core.provenance import experiment_manifest
+from gray.report import experiment_report
+from gray.utils.io import write_json
+
+manifest = experiment_manifest(
+    config,
+    checkpoint,
+    run_id=clearml_task.id,
+    evaluation={"status": "passed", "roc_auc": 0.93},
+)
+write_json("experiment_manifest.json", manifest)
+experiment_report(manifest)</pre>
     </section>
 
     <section id="utils">
@@ -286,10 +304,12 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.core.config.artifact_dir": "core/config.py#L76",
       "gray.core.device.resolve_device": "core/device.py#L5",
       "gray.core.provenance.sha256": "core/provenance.py#L29",
+      "gray.core.provenance.experiment_manifest": "core/provenance.py#L99",
       "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
       "gray.inference.Ensemble": "inference/ensemble.py#L12",
       "gray.preprocess.remove_background": "preprocess/remove_background.py#L11",
       "gray.report.training_report": "report/training_report.py#L42",
+      "gray.report.experiment_report": "report/experiment_report.py#L13",
       "gray.utils.seed_everything": "utils/seed_everything.py#L10",
       "gray.utils.seed_worker": "utils/seed_worker.py#L9",
       "gray.utils.torch_generator": "utils/torch_generator.py#L7",
