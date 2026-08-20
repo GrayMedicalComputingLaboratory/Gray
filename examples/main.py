@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from gray import load_config
-from gray.experiment import Experiment, artifact_dir, experiment_report
+from gray.experiment import Experiment, artifact_dir
 from gray.runtime import seed_everything
 from gray.utils import GrayLogger, write_json
 
@@ -56,7 +56,6 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     config, _ = load_config(args.config, args.override)
-    experiment_report(config)
 
     with Experiment(config) as experiment:
         logger = experiment.get_logger("train")
