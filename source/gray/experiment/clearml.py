@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from gray.utils.io import write_json
 from gray.utils.logging import GrayLogger, get_logger
@@ -19,8 +19,8 @@ class Experiment:
 
     Creating an instance starts a new ClearML Task, connects a redacted copy of
     the resolved configuration, and exposes the generated Task ID as ``run_id``.
-    Call :meth:`complete` after evaluation to persist and upload the structured
-    experiment manifest and trained checkpoint.
+    Use :meth:`run` for the standard managed training lifecycle. Advanced
+    callers may invoke :meth:`complete` or :meth:`fail` directly.
     """
 
     def __init__(
@@ -118,6 +118,68 @@ class Experiment:
         self._loggers.append(logger)
         return logger
 
+    def run(
+        self,
+        training: Callable[[dict[str, Any], GrayLogger], tuple[str | Path, Mapping[str, Any] | None]],
+        *,
+        logger_name: str = "train",
+        manifest_path: str | Path | None = None,
+        print_report: bool = True,
+    ) -> dict[str, Any]:
+        """Execute and finalize one managed training function.
+
+        The training function receives the resolved configuration and a logger
+        connected to the terminal, local file, and ClearML. Gray records the
+        configuration source and experiment identities before training. A
+        successful function must return ``(checkpoint, evaluation)``; Gray then
+        persists and uploads the final manifest and checkpoint. Any exception
+        marks the ClearML Task as failed and is re-raised unchanged.
+
+        Args:
+            training: Callable accepting ``(config, logger)`` and returning a
+                checkpoint path plus an optional evaluation mapping.
+            logger_name: Logical name used for the managed training logger.
+            manifest_path: Optional JSON manifest destination. Relative paths
+                resolve from the configuration directory.
+            print_report: Print the final Rich experiment report when true.
+
+        Returns:
+            The structured experiment manifest uploaded to ClearML.
+
+        Raises:
+            TypeError: If ``training`` is not callable or returns an invalid
+                result contract.
+            BaseException: Re-raises any error produced during training or
+                finalization after marking the Task as failed when possible.
+        """
+        self._ensure_open()
+        try:
+            if not callable(training):
+                raise TypeError("training must be callable")
+            logger = self.get_logger(logger_name)
+            config_path = self._config.get("_config_path")
+            if config_path is not None:
+                logger.info("config=%s", config_path)
+            logger.info("experiment_id=%s", self._config["experiment_id"])
+            logger.info("clearml_run_id=%s", self.run_id)
+            result = training(self._config, logger)
+            if not isinstance(result, tuple) or len(result) != 2:
+                raise TypeError("training must return (checkpoint, evaluation)")
+            checkpoint, evaluation = result
+            return self.complete(
+                checkpoint,
+                evaluation=evaluation,
+                manifest_path=manifest_path,
+                print_report=print_report,
+            )
+        except BaseException as error:
+            if not self._closed:
+                try:
+                    self.fail(str(error) or error.__class__.__name__)
+                except BaseException as cleanup_error:
+                    error.add_note(f"failed to close ClearML Task: {cleanup_error}")
+            raise
+
     def complete(
         self,
         checkpoint: str | Path,
@@ -188,19 +250,6 @@ class Experiment:
             self._close_loggers()
             self._task.close()
             self._closed = True
-
-    def __enter__(self) -> Experiment:
-        """Return this active experiment for context-manager usage."""
-        return self
-
-    def __exit__(self, error_type: type[BaseException] | None, error: BaseException | None, traceback: Any) -> None:
-        """Mark an exceptional context as failed, otherwise close it."""
-        if self._closed:
-            return
-        if error is not None:
-            self.fail(str(error) or error.__class__.__name__)
-        else:
-            self.close()
 
     def _ensure_open(self) -> None:
         if self._closed:

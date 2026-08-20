@@ -58,18 +58,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--override", action="append", default=[], metavar="KEY=VALUE")
     args = parser.parse_args(argv)
 
-    config, config_path = load_config(args.config, args.override)
-    experiment = Experiment(config)
-    try:
-        logger = experiment.get_logger("train")
-        logger.info("config=%s", config_path)
-        logger.info("experiment_id=%s", config["experiment_id"])
-        logger.info("clearml_run_id=%s", experiment.run_id)
-        checkpoint, evaluation = train(config, logger)
-        experiment.complete(checkpoint, evaluation=evaluation)
-    except BaseException as error:
-        experiment.fail(str(error) or error.__class__.__name__)
-        raise
+    config = load_config(args.config, args.override)
+    Experiment(config).run(train)
 
 
 if __name__ == "__main__":

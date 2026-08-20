@@ -44,6 +44,18 @@ python -m pip install "gray[clearml]"
 python examples/main.py
 ```
 
+常用训练入口只需要加载配置并提交训练函数：
+
+```python
+from gray import load_config
+from gray.experiment import Experiment
+
+config = load_config("configs/exp_001.yaml")
+manifest = Experiment(config).run(train)
+```
+
+`train(config, logger)` 返回 `(checkpoint, evaluation)`；Gray 自动完成日志、ClearML 状态、manifest 和 checkpoint 上传。
+
 ## 项目集成
 
 每个项目声明自己的生命周期入口；Gray 读取解析后的配置并调用对应函数。
@@ -157,6 +169,18 @@ python -m pip install "gray[clearml]"
 
 See [`examples/main.py`](examples/main.py) for a minimal training run. After
 running `clearml-init`, execute it with `python examples/main.py`.
+
+The standard managed entry point is:
+
+```python
+from gray import load_config
+from gray.experiment import Experiment
+
+config = load_config("configs/exp_001.yaml")
+manifest = Experiment(config).run(train)
+```
+
+`train(config, logger)` returns `(checkpoint, evaluation)`; Gray manages logging, ClearML status, the manifest, and checkpoint upload.
 
 ## Project Integration
 

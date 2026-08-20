@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -11,11 +12,13 @@ from rich.console import Console
 from gray.callbacks import EarlyStopping
 from gray.dicom import apply_window_level
 from gray.experiment import artifact_dir, experiment_manifest
+from gray.experiment import Experiment
 from gray.experiment._config import redact_config
 from gray.experiment.report import experiment_report
 from gray.inference import Ensemble
 from gray.preprocess import remove_background
 from gray.utils.logging import get_logger
+from gray.core.config import load_config
 
 
 def test_recursive_config_redaction_is_shared_by_report() -> None:
@@ -118,3 +121,40 @@ def test_logger_close_releases_handlers_and_tracker_formatting(tmp_path: Path) -
     assert tracker.messages == ["run"]
     logger.close()
     assert logger.logger.handlers == []
+
+
+def test_load_config_returns_mapping_with_source_metadata(tmp_path: Path) -> None:
+    config_path = tmp_path / "demo.yaml"
+    config_path.write_text("project:\n  output_root: outputs\n", encoding="utf-8")
+    config = load_config(config_path)
+    assert config["experiment_id"] == "demo"
+    assert config["_config_path"] == str(config_path.resolve())
+    assert config["_config_dir"] == str(tmp_path.resolve())
+
+
+def test_experiment_run_uses_single_training_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    experiment = Experiment.__new__(Experiment)
+    experiment._config = {"experiment_id": "demo"}
+    experiment._task = SimpleNamespace(id="run-1")
+    experiment._closed = False
+    logger = SimpleNamespace(info=lambda *args: None)
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(experiment, "get_logger", lambda name: logger)
+    monkeypatch.setattr(experiment, "complete", lambda checkpoint, **kwargs: captured.update({"checkpoint": checkpoint, **kwargs}) or {"ok": True})
+    monkeypatch.setattr(experiment, "fail", lambda reason: (_ for _ in ()).throw(AssertionError(reason)))
+    result = experiment.run(lambda config, received_logger: ("model.bin", {"status": "passed"}))
+    assert result == {"ok": True}
+    assert captured["checkpoint"] == "model.bin"
+
+
+def test_experiment_run_marks_training_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    experiment = Experiment.__new__(Experiment)
+    experiment._config = {"experiment_id": "demo"}
+    experiment._task = SimpleNamespace(id="run-1")
+    experiment._closed = False
+    monkeypatch.setattr(experiment, "get_logger", lambda name: SimpleNamespace(info=lambda *args: None))
+    failures: list[str] = []
+    monkeypatch.setattr(experiment, "fail", lambda reason: failures.append(reason))
+    with pytest.raises(RuntimeError, match="boom"):
+        experiment.run(lambda config, logger: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert failures == ["boom"]

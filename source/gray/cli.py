@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--override", action="append", default=[], metavar="KEY=VALUE")
     args = parser.parse_args(argv)
-    config, _ = load_config(args.config, args.override)
+    config = load_config(args.config, args.override)
     stage = args.command
     entrypoint = _load_entrypoint(config, stage)
     result = entrypoint(config)

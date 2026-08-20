@@ -72,8 +72,8 @@
       <h2>配置与 CLI</h2>
       <div class="api">
         <h3><code>gray.core.config.load_config</code></h3>
-        <p><code>load_config(path, overrides=()) -&gt; tuple[dict, Path]</code></p>
-        <table><tr><th>输入</th><td><code>path</code>：单个 YAML 路径；<code>overrides</code>：Hydra 风格的 <code>key=value</code> 列表。</td></tr><tr><th>输出</th><td>解析后的普通字典和绝对配置路径；自动加入 <code>experiment_id</code>、<code>_config_dir</code>。</td></tr><tr><th>限制</th><td>不允许 <code>defaults</code>、配置组或自动切换工作目录。</td></tr></table>
+        <p><code>load_config(path, overrides=()) -&gt; dict</code></p>
+        <table><tr><th>输入</th><td><code>path</code>：单个 YAML 路径；<code>overrides</code>：Hydra 风格的 <code>key=value</code> 列表。</td></tr><tr><th>输出</th><td>解析后的普通字典；自动加入 <code>experiment_id</code>、内部配置来源 <code>_config_path</code> 和 <code>_config_dir</code>。</td></tr><tr><th>限制</th><td>不允许 <code>defaults</code>、配置组、保留内部字段或自动切换工作目录。</td></tr></table>
       </div>
       <pre data-language="shell">python -m gray.cli train --config configs/exp_00.yaml
 python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.00003
@@ -85,26 +85,15 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
     <section id="experiment">
       <h2>Experiment</h2>
       <p class="lead">统一管理 Experiment、Dataset、Git Code、Config、Training、Model 与 Evaluation 的可追溯关系。</p>
-      <div class="api green"><h3><code>gray.experiment.Experiment</code></h3><p><code>Experiment(config, *, project_name=None, task_name=None, tags=None, output_uri=None, auto_connect_frameworks=True)</code></p><table class="contract"><tr><th>初始化</th><td>创建新的 ClearML training Task，以 <code>experiment_id</code> 作为默认 Task Name，并将 ClearML Task ID 暴露为 <code>run_id</code>。</td></tr><tr><th>配置</th><td><code>project_name</code>、<code>tags</code>、<code>output_uri</code> 可显式传入或读取 <code>config.tracking</code>；连接到 ClearML 前自动移除内部字段并遮蔽凭据。</td></tr><tr><th>日志</th><td><code>get_logger(name)</code> 返回统一 logger：终端显示 Rich 颜色、写入本地 <code>run.log</code>、同步纯文本到 ClearML；<code>metric(..., iteration=...)</code> 同时生成 ClearML 标量曲线。</td></tr><tr><th>完成</th><td><code>complete(checkpoint, evaluation=...)</code> 生成 <code>experiment/manifest.json</code>，上传清单和 checkpoint，打印谱系并关闭 Task。</td></tr><tr><th>失败</th><td><code>fail(reason)</code> 在 ClearML 标记失败；作为上下文管理器使用时，未捕获异常会自动标记失败。</td></tr><tr><th>原生 SDK</th><td><code>experiment.task</code> 仍返回 ClearML Task，用于 Gray 没有封装的曲线、图片和表格接口。</td></tr></table></div>
+      <div class="api green"><h3><code>gray.experiment.Experiment</code></h3><p><code>Experiment(config, *, project_name=None, task_name=None, tags=None, output_uri=None, auto_connect_frameworks=True)</code></p><table class="contract"><tr><th>初始化</th><td>创建新的 ClearML training Task，以 <code>experiment_id</code> 作为默认 Task Name，并将 ClearML Task ID 暴露为 <code>run_id</code>。</td></tr><tr><th>常用入口</th><td><code>run(training)</code> 创建统一 logger，调用 <code>training(config, logger)</code>，接收 <code>(checkpoint, evaluation)</code>，自动完成上传；异常时自动标记失败并重新抛出。</td></tr><tr><th>配置</th><td><code>project_name</code>、<code>tags</code>、<code>output_uri</code> 可显式传入或读取 <code>config.tracking</code>；连接到 ClearML 前自动移除内部字段并遮蔽凭据。</td></tr><tr><th>日志</th><td><code>get_logger(name)</code> 返回统一 logger：终端显示 Rich 颜色、写入本地 <code>run.log</code>、同步纯文本到 ClearML；<code>metric(..., iteration=...)</code> 同时生成 ClearML 标量曲线。</td></tr><tr><th>高级入口</th><td><code>complete()</code>、<code>fail()</code> 和 <code>close()</code> 用于需要手动控制生命周期的场景。</td></tr><tr><th>原生 SDK</th><td><code>experiment.task</code> 仍返回 ClearML Task，用于 Gray 没有封装的曲线、图片和表格接口。</td></tr></table></div>
       <div class="api green"><h3><code>gray.experiment.experiment_manifest</code></h3><p><code>experiment_manifest(config, checkpoint, *, evaluation=None, run_id=None) -&gt; dict</code></p><table class="contract"><tr><th>关系</th><td>显式建立 <code>Experiment → Dataset / Git Code / Config → Training → Model → Evaluation</code> 谱系。</td></tr><tr><th>Run ID</th><td>可传 ClearML Task ID；不传时读取 <code>config.run_id</code>，与作为实验方案名的 <code>experiment_id</code> 分离。</td></tr><tr><th>身份</th><td>保存数据版本、Git commit、配置版本及 SHA-256、checkpoint SHA-256、模型版本、训练 seed/fold 和评估结果。</td></tr><tr><th>输出</th><td>带 <code>schema_version</code> 的 JSON 可序列化字典，可保存为文件或上传实验追踪系统。</td></tr></table></div>
       <div class="api"><h3><code>gray.experiment.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><p>统一生成 <code>output_root / experiment_id / stage</code>；stage 必须是安全的单级目录名。</p></div>
       <div class="api green"><h3><code>gray.experiment.experiment_report</code></h3><p><code>experiment_report(config, *, manifest=None, console=None) -&gt; None</code></p><p>打印展开后的实验配置与 Python、操作系统、Gray、PyTorch、Hydra、ClearML 等环境版本，敏感字段自动遮蔽；传入 <code>manifest</code> 时继续显示 Experiment、输入版本、训练 Run、模型和评估状态。</p></div>
-      <pre data-language="python">from gray.experiment import Experiment
+      <pre data-language="python">from gray import load_config
+from gray.experiment import Experiment
 
-experiment = Experiment(config)
-logger = experiment.get_logger("train")
-
-try:
-    logger.info("开始训练")
-    logger.metric("validation_auc", 0.93, iteration=10)
-    logger.success("训练完成")
-    manifest = experiment.complete(
-        checkpoint,
-        evaluation={"status": "passed", "roc_auc": 0.93},
-    )
-except BaseException as error:
-    experiment.fail(str(error) or error.__class__.__name__)
-    raise</pre>
+config = load_config("configs/exp_001.yaml")
+manifest = Experiment(config).run(train)</pre>
     </section>
 
     <section id="callbacks">

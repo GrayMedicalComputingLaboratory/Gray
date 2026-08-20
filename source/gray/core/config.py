@@ -9,20 +9,21 @@ from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig, OmegaConf
 
 
-def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[str, Any], Path]:
+def load_config(path: str | Path, overrides: Sequence[str] = ()) -> dict[str, Any]:
     """Load and resolve one self-contained experiment YAML file with Hydra.
 
     The configuration filename determines ``experiment_id``. Hydra overrides
-    are applied before interpolation is resolved, and ``_config_dir`` is added
-    to the returned mapping for portable relative-path resolution.
+    are applied before interpolation is resolved. ``_config_path`` and
+    ``_config_dir`` are added for configuration provenance and portable
+    relative-path resolution.
 
     Args:
         path: Path to the experiment YAML file.
         overrides: Hydra override expressions such as ``train.seed=42``.
 
     Returns:
-        A pair containing the resolved configuration dictionary and the
-        absolute path to its source file.
+        The resolved configuration dictionary, including internal absolute
+        source path and source directory fields.
 
     Raises:
         FileNotFoundError: If ``path`` is not an existing file.
@@ -42,8 +43,10 @@ def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[s
         raise ValueError("Gray accepts one self-contained experiment YAML; Hydra defaults are not supported")
     with initialize_config_dir(version_base=None, config_dir=str(source.parent)):
         composed = compose(config_name=source.stem, overrides=list(overrides))
-    if "_config_dir" in composed:
-        raise ValueError("_config_dir is reserved and cannot be configured")
+    reserved = {"_config_path", "_config_dir"}.intersection(composed)
+    if reserved:
+        name = sorted(reserved)[0]
+        raise ValueError(f"{name} is reserved and cannot be configured")
     result = OmegaConf.to_container(composed, resolve=True, throw_on_missing=True)
     if not isinstance(result, dict):
         raise ValueError("configuration root must resolve to a mapping")
@@ -52,8 +55,9 @@ def load_config(path: str | Path, overrides: Sequence[str] = ()) -> tuple[dict[s
     if configured not in (None, experiment_id):
         raise ValueError(f"experiment_id must be derived from config filename: expected {experiment_id}, got {configured}")
     result["experiment_id"] = experiment_id
+    result["_config_path"] = str(source)
     result["_config_dir"] = str(source.parent)
-    return result, source
+    return result
 
 
 def resolve_path(config: Mapping[str, Any], value: str | Path) -> Path:
