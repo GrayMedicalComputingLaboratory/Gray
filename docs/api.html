@@ -94,13 +94,17 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
 experiment = Experiment(config)
 logger = experiment.get_logger("train")
 
-logger.info("开始训练")
-logger.metric("validation_auc", 0.93, iteration=10)
-logger.success("训练完成")
-manifest = experiment.complete(
-    checkpoint,
-    evaluation={"status": "passed", "roc_auc": 0.93},
-)</pre>
+try:
+    logger.info("开始训练")
+    logger.metric("validation_auc", 0.93, iteration=10)
+    logger.success("训练完成")
+    manifest = experiment.complete(
+        checkpoint,
+        evaluation={"status": "passed", "roc_auc": 0.93},
+    )
+except BaseException as error:
+    experiment.fail(str(error) or error.__class__.__name__)
+    raise</pre>
     </section>
 
     <section id="callbacks">
