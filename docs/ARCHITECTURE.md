@@ -16,7 +16,7 @@ Every source file has one owner and one responsibility.
 | `source/gray/utils/seed_worker.py` | One PyTorch DataLoader worker's random-state control. | Global process seeding or IO. |
 | `source/gray/utils/torch_generator.py` | Seeded PyTorch `Generator` construction. | DataLoader configuration or global seeding. |
 | `source/gray/utils/tta.py` | Selected in-plane inference-time flip and Rotate90 variants. | Model calls, prediction aggregation or training augmentation. |
-| `source/gray/utils/logging.py` | Console/file logger construction. | Metric reporting semantics. |
+| `source/gray/utils/logging.py` | Semantic console/file logging, including numeric metric log records. | Experiment tracking, metric aggregation or remote reporting. |
 | `source/gray/utils/io.py` | Small UTF-8 JSON artifact writes. | Project result schemas or data loading. |
 | `source/gray/dicom/<operation>.py` | SimpleITK-backed pixel and volume processing: read, rescale, window/level, polarity and resampling. | Patient metadata, Series discovery/selection, UID policy or clinical labels. |
 

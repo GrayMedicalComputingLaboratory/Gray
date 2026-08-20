@@ -152,7 +152,14 @@ cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0,
       <div class="api"><h3><code>gray.utils.seed_everything</code></h3><p><code>seed_everything(seed: int, deterministic: bool = True) -&gt; None</code></p><p>固定可用的 Python、NumPy、PyTorch、CUDA 和 cuDNN 状态；<code>deterministic=True</code> 会关闭 cuDNN benchmark 并请求确定性算法。函数只为子进程导出 <code>PYTHONHASHSEED</code>；当前解释器的 hash seed 必须在启动 Python 前设置。</p></div>
       <div class="api"><h3><code>gray.utils.seed_worker</code></h3><p><code>seed_worker(worker_id) -&gt; None</code></p><p>用于 PyTorch <code>DataLoader(worker_init_fn=...)</code>，根据 worker seed 固定 Python 与 NumPy。</p></div>
       <div class="api"><h3><code>gray.utils.torch_generator</code></h3><p><code>torch_generator(seed) -&gt; torch.Generator</code></p><p>返回可传给 <code>DataLoader(generator=...)</code> 的 PyTorch Generator。</p></div>
-      <div class="api"><h3><code>gray.utils.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path) -&gt; logging.Logger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录。</td></tr><tr><th>输出</th><td><span class="type">logging.Logger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr></table></div>
+      <div class="api"><h3><code>gray.utils.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path) -&gt; GrayLogger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录。</td></tr><tr><th>输出</th><td><span class="type">GrayLogger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr><tr><th>语义方法</th><td><code>success(message)</code> 使用绿色粗体；<code>metric(name, value)</code> 使用青色粗体并记录为稳定的 <code>name=value</code>；<code>warning</code> 为黄色，<code>error</code> 为红色粗体。</td></tr><tr><th>文件日志</th><td>只写纯文本，不包含 Rich 颜色或样式标签。</td></tr></table></div>
+      <pre data-language="python">from gray.utils import get_logger
+
+logger = get_logger("train", output_dir)
+logger.success("训练完成")
+logger.metric("validation_auc", 0.921)
+logger.warning("数据量不足")
+logger.error("checkpoint 保存失败")</pre>
       <div class="api"><h3><code>gray.utils.write_json / read_json</code></h3><p><code>write_json(path, value) -&gt; None</code> / <code>read_json(path) -&gt; dict[str, Any]</code></p><table class="contract"><tr><th>输入</th><td>JSON 文件路径；写入值必须是可 JSON 序列化的 mapping。</td></tr><tr><th>输出</th><td><code>write_json</code> 自动创建父目录并原子替换文件；<code>read_json</code> 返回对象根字典，格式无效或根类型错误时抛出 <code>ValueError</code>。</td></tr></table></div>
       <div class="api"><h3><code>gray.utils.tta</code></h3><p><code>tta(sample, *, dim, horizontal_flip=False, vertical_flip=False, rotate90_angles=(0,)) -&gt; dict</code></p><p>支持 NumPy 与 PyTorch；<code>dim="2d"</code> 或 <code>"3d"</code>。3D 只对最后两个 H/W 轴变换，不翻转 Z 轴。</p></div>
       <div class="api"><h3>Utils 输入输出契约</h3><table class="contract"><tr><th>函数</th><th>输入</th><th>输出 / 行为</th></tr><tr><td><code>seed_everything</code></td><td><span class="type">int</span> seed；<span class="type">bool</span> deterministic。</td><td><span class="type">None</span>；固定 Python/NumPy/PyTorch/CUDA 状态。</td></tr><tr><td><code>seed_worker</code></td><td><span class="type">int</span> worker_id，必须 ≥ 0。</td><td><span class="type">None</span>；从 PyTorch worker seed 派生。</td></tr><tr><td><code>torch_generator</code></td><td><span class="type">int</span> seed。</td><td><span class="type">torch.Generator</span>；可传给 DataLoader。</td></tr><tr><td><code>tta</code></td><td><span class="type">np.ndarray</span> 或 <span class="type">torch.Tensor</span>；<code>dim="2d"</code> 至少 2 维，<code>dim="3d"</code> 至少 3 维。</td><td><span class="type">dict[str, sample]</span>；只返回原图及显式选择的变体。</td></tr></table></div>
@@ -266,7 +273,7 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.utils.seed_everything": "utils/seed_everything.py#L10",
       "gray.utils.seed_worker": "utils/seed_worker.py#L9",
       "gray.utils.torch_generator": "utils/torch_generator.py#L7",
-      "gray.utils.get_logger": "utils/logging.py#L10",
+      "gray.utils.get_logger": "utils/logging.py#L82",
       "gray.utils.write_json / read_json": "utils/io.py#L12",
       "gray.utils.tta": "utils/tta.py#L10"
     };
