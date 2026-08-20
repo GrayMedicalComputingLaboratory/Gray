@@ -1,5 +1,5 @@
 """Reusable image preprocessing operations."""
 
-from .remove_black_border import remove_black_border
+from .remove_background import remove_background
 
-__all__ = ["remove_black_border"]
+__all__ = ["remove_background"]
