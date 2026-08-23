@@ -54,6 +54,8 @@ def init_task(config: Mapping[str, Any], *, logger: GrayLogger | None = None) ->
         },
         name="Resolved Config",
     )
+    if logger is not None:
+        logger.bind_tracker(task.get_logger())
     return task
 
 

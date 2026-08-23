@@ -186,6 +186,27 @@ def test_logger_close_releases_handlers_and_tracker_formatting(tmp_path: Path) -
     assert logger.logger.handlers == []
 
 
+def test_logger_can_bind_clearml_tracker_after_construction(tmp_path: Path) -> None:
+    calls: list[tuple[str, dict[str, object]]] = []
+
+    class Tracker:
+        def report_text(self, message: str, **options: object) -> None:
+            calls.append((message, options))
+
+        def report_scalar(self, **options: object) -> None:
+            calls.append(("scalar", options))
+
+    logger = get_logger("tracker-bind", tmp_path)
+    logger.bind_tracker(Tracker())
+    logger.metric("train_loss", 0.25, iteration=3, title="Loss")
+
+    assert calls[-1] == (
+        "scalar",
+        {"title": "Loss", "series": "train_loss", "value": 0.25, "iteration": 3},
+    )
+    logger.close()
+
+
 def test_load_config_returns_mapping_with_source_metadata(tmp_path: Path) -> None:
     config_path = tmp_path / "demo.yaml"
     config_path.write_text("project:\n  output_root: outputs\n", encoding="utf-8")

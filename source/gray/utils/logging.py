@@ -108,6 +108,21 @@ class GrayLogger(logging.LoggerAdapter):
             self.logger.removeHandler(handler)
             handler.close()
 
+    def bind_tracker(self, tracker: Any) -> None:
+        """Bind a ClearML-compatible tracker after logger construction.
+
+        Args:
+            tracker: Object providing ``report_text`` and ``report_scalar``.
+
+        Raises:
+            TypeError: If the tracker does not provide the required methods.
+        """
+        if not callable(getattr(tracker, "report_text", None)) or not callable(
+            getattr(tracker, "report_scalar", None)
+        ):
+            raise TypeError("tracker must provide report_text and report_scalar")
+        self._tracker = tracker
+
     def success(self, message: object, *args: object, **kwargs: Any) -> None:
         """Log a successful operation with a green emphasized console style.
 
