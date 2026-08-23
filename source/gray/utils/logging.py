@@ -1,15 +1,15 @@
 """Consistent console and file logger construction."""
+
 from __future__ import annotations
 
 import logging
 import math
 from numbers import Real
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from rich.logging import RichHandler
 from rich.text import Text
-
 
 SUCCESS = 25
 METRIC = 21
@@ -20,7 +20,7 @@ logging.addLevelName(METRIC, "METRIC")
 class _GrayRichHandler(RichHandler):
     """Apply semantic console styles without modifying stored messages."""
 
-    _message_styles = {
+    _message_styles: ClassVar[dict[int, str]] = {
         SUCCESS: "bold green",
         METRIC: "bold cyan",
         logging.WARNING: "yellow",
@@ -29,6 +29,15 @@ class _GrayRichHandler(RichHandler):
     }
 
     def render_message(self, record: logging.LogRecord, message: str) -> Text:
+        """Render and color one console log message by semantic level.
+
+        Args:
+            record: Standard-library log record containing the numeric level.
+            message: Already formatted plain-text log message.
+
+        Returns:
+            Rich ``Text`` with the configured semantic style applied.
+        """
         rendered = super().render_message(record, message)
         style = self._message_styles.get(record.levelno)
         if style:
@@ -40,12 +49,30 @@ class GrayLogger(logging.LoggerAdapter):
     """Logger with semantic success and numeric metric operations."""
 
     def __init__(self, logger: logging.Logger, extra: dict[str, Any] | None = None, *, tracker: Any = None) -> None:
-        """Wrap a standard logger and optionally mirror records to a tracker."""
+        """Wrap a standard logger and optionally mirror records to a tracker.
+
+        Args:
+            logger: Configured standard-library logger.
+            extra: Optional contextual fields passed to ``LoggerAdapter``.
+            tracker: Optional object providing ClearML-compatible
+                ``report_text`` and ``report_scalar`` methods.
+        """
         super().__init__(logger, extra or {})
         self._tracker = tracker
+        self._forwarded_logger_names: set[str] = set()
 
     def log(self, level: int, msg: object, *args: object, **kwargs: Any) -> None:
-        """Write locally and mirror the formatted plain-text record to ClearML."""
+        """Write locally and mirror the formatted plain-text record.
+
+        Args:
+            level: Standard-library numeric logging level.
+            msg: Message object or percent-style format string.
+            *args: Values interpolated into ``msg``.
+            **kwargs: Standard logging keyword arguments.
+
+        Returns:
+            None.
+        """
         if not self.isEnabledFor(level):
             return
         super().log(level, msg, *args, **kwargs)
@@ -67,6 +94,16 @@ class GrayLogger(logging.LoggerAdapter):
         Returns:
             None. Subsequent calls are safe and have no effect.
         """
+        for name in tuple(self._forwarded_logger_names):
+            external = logging.getLogger(name)
+            for handler in tuple(external.handlers):
+                if (
+                    isinstance(handler, _GrayForwardHandler)
+                    and handler.target_logger is self.logger
+                ):
+                    external.removeHandler(handler)
+                    handler.close()
+            self._forwarded_logger_names.remove(name)
         for handler in tuple(self.logger.handlers):
             self.logger.removeHandler(handler)
             handler.close()
@@ -122,6 +159,85 @@ class GrayLogger(logging.LoggerAdapter):
         self.log(METRIC, "%s=%s", name, numeric_value)
         if self._tracker is not None:
             self._tracker.report_scalar(title=title, series=name, value=numeric_value, iteration=iteration)
+
+
+class _GrayForwardHandler(logging.Handler):
+    """Forward standard-library records into one configured Gray logger."""
+
+    def __init__(self, target: GrayLogger) -> None:
+        """Store the Gray logger receiving forwarded records.
+
+        Args:
+            target: Configured Gray logger for console and file output.
+        """
+        super().__init__(level=logging.NOTSET)
+        self._target = target
+
+    @property
+    def target_logger(self) -> logging.Logger:
+        """Return the underlying logger used by the forwarding target."""
+        return self._target.logger
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Forward one external record without duplicating its logger prefix.
+
+        Args:
+            record: Record emitted by an external standard-library logger.
+        """
+        try:
+            message = record.getMessage()
+            if record.exc_info:
+                message = f"{message}\n{self._format_exception(record.exc_info)}"
+            self._target.log(record.levelno, message)
+        except Exception:  # noqa: BLE001 - logging failures must not break callers
+            self.handleError(record)
+
+    @staticmethod
+    def _format_exception(exc_info: Any) -> str:
+        """Format exception details using the standard logging formatter."""
+        return logging.Formatter().formatException(exc_info)
+
+
+def forward_standard_logger(name: str, target: GrayLogger) -> None:
+    """Route an external standard-library logger through Gray handlers.
+
+    Existing handlers on the named logger are detached so console output is
+    emitted once through the target Gray logger and stored in its ``run.log``.
+    Repeated calls replace an earlier Gray forwarding handler safely.
+
+    Args:
+        name: External logger namespace, for example ``clearml``.
+        target: Configured Gray logger receiving external records.
+
+    Raises:
+        ValueError: If the logger name is empty.
+        TypeError: If target is not a :class:`GrayLogger`.
+    """
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("external logger name must be non-empty")
+    if not isinstance(target, GrayLogger):
+        raise TypeError("external logger target must be a GrayLogger")
+    logger_name = name.strip()
+    external = logging.getLogger(logger_name)
+    logger_names = [
+        logger_name,
+        *[
+            child_name
+            for child_name in logging.Logger.manager.loggerDict
+            if child_name.startswith(f"{logger_name}.")
+        ],
+    ]
+    for child_name in logger_names:
+        child = logging.getLogger(child_name)
+        for handler in tuple(child.handlers):
+            child.removeHandler(handler)
+            handler.close()
+        child.setLevel(logging.NOTSET if child_name != logger_name else logging.INFO)
+        child.propagate = child_name != logger_name
+    external.addHandler(_GrayForwardHandler(target))
+    external.setLevel(logging.INFO)
+    external.propagate = False
+    target._forwarded_logger_names.add(logger_name)
 
 
 def get_logger(name: str, output_dir: Path, *, tracker: Any = None) -> GrayLogger:
