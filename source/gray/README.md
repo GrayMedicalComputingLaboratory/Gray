@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/gray.png" alt="Gray Medical Computing Laboratory" width="360">
+  <img src="https://raw.githubusercontent.com/GrayMedicalComputingLaboratory/Gray/main/docs/assets/gray.png" alt="Gray Medical Computing Laboratory" width="360">
 </p>
 
 <p align="center">
@@ -16,29 +16,30 @@ Gray 是 Gray Medical Computing Laboratory 的轻量、可复用训练研究基�
 
 ## 文档
 
-- [架构说明](docs/ARCHITECTURE.md)：框架模块的职责和所有权。
+- [架构说明](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/ARCHITECTURE.md)：框架模块的职责和所有权。
 - [API 参考](https://graymedicalcomputinglaboratory.github.io/Gray/api.html)：可渲染的接口文档，包含参数、返回值、异常和源码链接。
-- [API 源文件](docs/api.html)：仓库中的静态文档源文件。
+- [API 源文件](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/api.html)：仓库中的静态文档源文件。
 
 ## 安装
 
 ```bash
-python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
+python -m pip install --upgrade \
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
 ```
 
 本地开发安装：
 
 ```bash
-python -m pip install -e /path/to/gray
+python -m pip install -e /path/to/Gray/source/gray
 ```
 
 启用 ClearML 实验管理：
 
 ```bash
-python -m pip install "gray[clearml]"
+python -m pip install -e "/path/to/Gray/source/gray[train]"
 ```
 
-最小训练示例见 [`examples/main.py`](examples/main.py)，完成 `clearml-init` 后运行：
+最小训练示例见 [`examples/main.py`](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/examples/main.py)，完成 `clearml-init` 后运行：
 
 ```bash
 python examples/main.py
@@ -55,7 +56,7 @@ task = init_task(config)
 result = train(config, task)
 ```
 
-`train(config, task)` 接收原生 ClearML `Task`。训练代码直接通过 `task.get_logger()`、`task.connect()`、`task.upload_artifact()`、`task.update_output_model()` 等 ClearML API 管理日志、指标、参数、产物和模型。正常进程退出与未捕获异常由 ClearML 自动标记为完成或失败；异常若被业务代码捕获并吞掉，调用方必须自行设置 Task 状态。
+`train(config, task)` 接收原生 ClearML `Task`。日志、训练曲线和 debug sample 统一通过绑定 tracker 的 `GrayLogger` 上报；参数、产物和模型仍使用 `task.connect()`、`task.upload_artifact()` 和 `task.update_output_model()`。正常进程退出与未捕获异常由 ClearML 自动标记为完成或失败。
 
 ## 项目集成
 
@@ -147,29 +148,30 @@ It provides configuration identity, reproducibility, artifact paths, lifecycle d
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md): responsibilities and ownership of every framework module.
+- [Architecture](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/ARCHITECTURE.md): responsibilities and ownership of every framework module.
 - [API Reference](https://graymedicalcomputinglaboratory.github.io/Gray/api.html): rendered API documentation with parameters, returns, exceptions and source links.
-- [API source](docs/api.html): the static documentation source stored in this repository.
+- [API source](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/api.html): the static documentation source stored in this repository.
 
 ## Installation
 
 ```bash
-python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
+python -m pip install --upgrade \
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
 ```
 
 For local development:
 
 ```bash
-python -m pip install -e /path/to/gray
+python -m pip install -e /path/to/Gray/source/gray
 ```
 
 Enable ClearML experiment management:
 
 ```bash
-python -m pip install "gray[clearml]"
+python -m pip install -e "/path/to/Gray/source/gray[train]"
 ```
 
-See [`examples/main.py`](examples/main.py) for a minimal training run. After
+See [`examples/main.py`](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/examples/main.py) for a minimal training run. After
 running `clearml-init`, execute it with `python examples/main.py`.
 
 The standard managed entry point is:
@@ -183,7 +185,7 @@ task = init_task(config)
 result = train(config, task)
 ```
 
-`train(config, task)` receives the native ClearML `Task`. Training code owns logs, metrics, parameters, artifacts, and model registration through APIs such as `task.get_logger()`, `task.connect()`, `task.upload_artifact()`, and `task.update_output_model()`. ClearML marks normal process exit as completed and uncaught exceptions as failed. If project code catches and suppresses an exception, it must set the Task status itself.
+`train(config, task)` receives the native ClearML `Task`. Logs, curves, and debug samples are reported through a tracker-bound `GrayLogger`; parameters, artifacts, and models continue to use `task.connect()`, `task.upload_artifact()`, and `task.update_output_model()`. ClearML marks normal process exit as completed and uncaught exceptions as failed.
 
 ## Project Integration
 

@@ -11,6 +11,8 @@ dependencies = ["hydra-core>=1.3", "numpy>=1.26", "pydicom>=3.0", "rich>=13.7", 
 
 [project.optional-dependencies]
 clearml = ["clearml>=1.16"]
+nnunet = ["nnunetv2>=2.6"]
+train = ["clearml>=1.16", "nnunetv2>=2.6"]
 
 [project.scripts]
 gray = "gray.cli:main"

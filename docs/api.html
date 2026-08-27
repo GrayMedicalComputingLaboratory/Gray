@@ -49,23 +49,31 @@
     <strong><img src="assets/gray-mark.png" alt="">目录</strong>
     <a href="#install">安装与约定</a>
     <a href="#config">配置与 CLI</a>
-    <a href="#experiment">Experiment</a>
+    <a href="#experiment">ClearML Task</a>
     <a href="#callbacks">Callbacks</a>
     <a href="#inference">Inference</a>
     <a href="#preprocess">Preprocess</a>
+    <a href="#nnunet">nnU-Net v2</a>
     <a href="#runtime">Runtime</a>
     <a href="#utils">Utils</a>
     <a href="#tta">TTA</a>
-    <a href="#dicom">DICOM / SimpleITK</a>
+    <a href="#dicom">DICOM / pydicom</a>
     <a href="#boundaries">边界</a>
   </nav>
   <div>
     <section id="install">
       <h2>安装与约定</h2>
       <p class="lead">Gray 不包含项目专用模型、数据集和训练循环。项目通过 entrypoint 接入 Gray。</p>
-      <pre data-language="shell">python -m pip install --upgrade "git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"</pre>
+      <pre data-language="shell">python -m pip install --upgrade \
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
+
+# Local editable installation
+python -m pip install -e /path/to/Gray/source/gray
+
+# ClearML + native nnU-Net v2
+python -m pip install -e "/path/to/Gray/source/gray[train]"</pre>
       <div class="note">每个实验只维护一个 YAML；YAML 文件名就是 <code>experiment_id</code>。生成的 trial 配置只是运行快照，不是第二份人工配置。</div>
-      <div class="api"><h3>类型速查 / Type guide</h3><table class="contract"><tr><th>标记</th><th>含义</th><th>典型值</th></tr><tr><td><span class="type">PathLike</span></td><td>字符串或 <code>pathlib.Path</code> 文件路径。</td><td><code>"configs/exp_00.yaml"</code></td></tr><tr><td><span class="type">Sequence[T]</span></td><td>列表、元组或其他可迭代序列；除非特别说明，不接受空序列。</td><td><code>["BCC", "Non-BCC"]</code></td></tr><tr><td><span class="type">ArrayLike</span></td><td>NumPy 数组或可转换为数组的一维/二维数值序列。</td><td><code>np.ndarray</code>、<code>list[float]</code></td></tr><tr><td><span class="type">torch.Tensor</span></td><td>PyTorch 张量；TTA 保留 dtype、device 和梯度语义。</td><td><code>[C,H,W]</code> 或 <code>[C,D,H,W]</code></td></tr><tr><td><span class="type">sitk.Image</span></td><td>SimpleITK 图像对象，携带 spacing、origin、direction 和 metadata。</td><td>DICOM volume</td></tr></table></div>
+      <div class="api"><h3>类型速查 / Type guide</h3><table class="contract"><tr><th>标记</th><th>含义</th><th>典型值</th></tr><tr><td><span class="type">PathLike</span></td><td>字符串或 <code>pathlib.Path</code> 文件路径。</td><td><code>"configs/exp_00.yaml"</code></td></tr><tr><td><span class="type">Sequence[T]</span></td><td>列表、元组或其他可迭代序列；除非特别说明，不接受空序列。</td><td><code>["BCC", "Non-BCC"]</code></td></tr><tr><td><span class="type">ArrayLike</span></td><td>NumPy 数组或可转换为数组的一维/二维数值序列。</td><td><code>np.ndarray</code>、<code>list[float]</code></td></tr><tr><td><span class="type">torch.Tensor</span></td><td>PyTorch 张量；TTA 保留 dtype、device 和梯度语义。</td><td><code>[C,H,W]</code> 或 <code>[C,D,H,W]</code></td></tr><tr><td><span class="type">DicomVolume</span></td><td>NumPy 像素、同轴顺序 spacing、源 pydicom Dataset 和 Photometric Interpretation。</td><td><code>array[z,y,x]</code></td></tr></table></div>
     </section>
 
     <section id="config">
@@ -83,17 +91,18 @@ python -m gray.cli train --config configs/exp_00.yaml --override train.lr=0.0000
     </section>
 
     <section id="experiment">
-      <h2>Experiment</h2>
-      <p class="lead">统一管理 Experiment、Dataset、Git Code、Config、Training、Model 与 Evaluation 的可追溯关系。</p>
-      <div class="api green"><h3><code>gray.experiment.Experiment</code></h3><p><code>Experiment(config, *, project_name=None, task_name=None, tags=None, output_uri=None, auto_connect_frameworks=True)</code></p><table class="contract"><tr><th>初始化</th><td>创建新的 ClearML training Task，以 <code>experiment_id</code> 作为默认 Task Name，并将 ClearML Task ID 暴露为 <code>run_id</code>。</td></tr><tr><th>常用入口</th><td><code>run(training)</code> 创建统一 logger，调用 <code>training(config, logger)</code>，接收 <code>(checkpoint, evaluation)</code>，自动完成上传；异常时自动标记失败并重新抛出。</td></tr><tr><th>配置</th><td><code>project_name</code>、<code>tags</code>、<code>output_uri</code> 可显式传入或读取 <code>config.tracking</code>；连接到 ClearML 前自动移除内部字段并遮蔽凭据。</td></tr><tr><th>日志</th><td><code>get_logger(name)</code> 返回统一 logger：终端显示 Rich 颜色、写入本地 <code>run.log</code>、同步纯文本到 ClearML；<code>metric(..., iteration=...)</code> 同时生成 ClearML 标量曲线。</td></tr><tr><th>高级入口</th><td><code>complete()</code>、<code>fail()</code> 和 <code>close()</code> 用于需要手动控制生命周期的场景。</td></tr><tr><th>原生 SDK</th><td><code>experiment.task</code> 仍返回 ClearML Task，用于 Gray 没有封装的曲线、图片和表格接口。</td></tr></table></div>
-      <div class="api green"><h3><code>gray.experiment.experiment_manifest</code></h3><p><code>experiment_manifest(config, checkpoint, *, evaluation=None, run_id=None) -&gt; dict</code></p><table class="contract"><tr><th>关系</th><td>显式建立 <code>Experiment → Dataset / Git Code / Config → Training → Model → Evaluation</code> 谱系。</td></tr><tr><th>Run ID</th><td>可传 ClearML Task ID；不传时读取 <code>config.run_id</code>，与作为实验方案名的 <code>experiment_id</code> 分离。</td></tr><tr><th>身份</th><td>保存数据版本、Git commit、配置版本及 SHA-256、checkpoint SHA-256、模型版本、训练 seed/fold 和评估结果。</td></tr><tr><th>输出</th><td>带 <code>schema_version</code> 的 JSON 可序列化字典，可保存为文件或上传实验追踪系统。</td></tr></table></div>
+      <h2>ClearML Task</h2>
+      <p class="lead">以 ClearML Task 和 OutputModel 作为实验、配置、代码、指标与模型的唯一追溯来源。</p>
+      <div class="api green"><h3><code>gray.experiment.init_task</code></h3><p><code>init_task(config, logger=None) -&gt; clearml.Task</code></p><table class="contract"><tr><th>必填配置</th><td><code>experiment_id</code> 和 <code>tracking.project_name</code>；tags/output_uri 可选。</td></tr><tr><th>功能</th><td>调用 <code>Task.init()</code>，连接 resolved config，并在提供 <code>logger</code> 时将 ClearML tracker 绑定到 GrayLogger。</td></tr><tr><th>调用方职责</th><td>日志、scalar 和 debug sample 使用 GrayLogger；参数、产物和模型使用 <code>task.connect()</code>、<code>task.upload_artifact()</code>、<code>task.update_output_model()</code>。</td></tr><tr><th>状态</th><td>ClearML 在正常进程退出时标记完成，在未捕获异常时标记失败。被业务代码捕获并吞掉的异常必须由调用方自行设置状态。</td></tr><tr><th>不再包装</th><td>Gray 不提供 run 生命周期，不规定训练返回值、checkpoint/evaluation 结构或 metadata 策略。</td></tr></table></div>
       <div class="api"><h3><code>gray.experiment.artifact_dir</code></h3><p><code>artifact_dir(config, stage, create=False) -&gt; Path</code></p><p>统一生成 <code>output_root / experiment_id / stage</code>；stage 必须是安全的单级目录名。</p></div>
-      <div class="api green"><h3><code>gray.experiment.experiment_report</code></h3><p><code>experiment_report(config, *, manifest=None, console=None) -&gt; None</code></p><p>打印展开后的实验配置与 Python、操作系统、Gray、PyTorch、Hydra、ClearML 等环境版本，敏感字段自动遮蔽；传入 <code>manifest</code> 时继续显示 Experiment、输入版本、训练 Run、模型和评估状态。</p></div>
       <pre data-language="python">from gray import load_config
-from gray.experiment import Experiment
+from gray.experiment import artifact_dir, init_task
+from gray.utils.logging import get_logger
 
 config = load_config("configs/exp_001.yaml")
-manifest = Experiment(config).run(train)</pre>
+logger = get_logger("training", artifact_dir(config, "train"))
+task = init_task(config, logger=logger)
+result = train(config, task)</pre>
     </section>
 
     <section id="callbacks">
@@ -168,14 +177,33 @@ cropped_volume = remove_background(volume, background_colors=0, spatial_axes=(0,
       <div class="api"><h3><code>gray.runtime.seed_worker</code> / <code>torch_generator</code></h3><p>为 PyTorch DataLoader worker 和 generator 提供可复现随机状态。</p></div>
     </section>
 
+    <section id="nnunet">
+      <h2>Native nnU-Net v2</h2>
+      <p class="lead">Gray 只负责以统一配置、路径、设备和 logger 驱动官方 nnU-Net v2 CLI；数据转换、标签语义、后处理和临床指标由项目负责。</p>
+      <div class="api green"><h3><code>gray.nnunet.NnUNetRunner</code></h3><p><code>NnUNetRunner(config, logger, device=None)</code></p><table class="contract"><tr><th>输入</th><td><code>config</code> 必须包含 nnU-Net dataset、training 和 inference 配置；<code>logger</code> 必须提供 GrayLogger-compatible <code>info()</code> 与 <code>metric()</code>；<code>device</code> 接受 CPU 或 CUDA 标识。</td></tr><tr><th>plan_and_preprocess</th><td>调用官方 <code>nnUNetv2_plan_and_preprocess -d DATASET_ID</code>；默认校验 dataset integrity。</td></tr><tr><th>train</th><td>调用官方 <code>nnUNetv2_train</code>；所有 stdout/stderr 逐行进入 Gray logger，并解析 loss、pseudo Dice、learning rate 和 epoch time。</td></tr><tr><th>predict</th><td>调用官方 <code>nnUNetv2_predict</code>；输出目录必须尚不存在；worker 数必须为正整数。</td></tr><tr><th>异常</th><td>CLI 不存在、命令非零退出、设备不可用、配置缺失或输出目录已存在时明确失败；命令失败包含最近 20 行输出。</td></tr></table></div>
+      <div class="api"><h3><code>gray.nnunet.NnUNetRunner.validate_checkpoint</code></h3><p><code>validate_checkpoint(expected_sha256=None) -&gt; Path</code></p><table class="contract"><tr><th>功能</th><td>定位固定 split 的 checkpoint，并使用 Gray SHA-256 工具验证注册摘要。</td></tr><tr><th>异常</th><td>摘要不是 64 位 SHA-256、checkpoint 不存在或哈希不一致时抛出异常。</td></tr></table></div>
+      <div class="api"><h3><code>gray.nnunet.dataset_dir / model_dir / nnunet_environment</code></h3><p>生成 experiment-scoped <code>nnUNet_raw</code>、<code>nnUNet_preprocessed</code>、<code>nnUNet_results</code> 路径与子进程环境；不会修改当前进程的环境变量。</p></div>
+      <div class="api"><h3><code>gray.nnunet.NnUNetLogReporter</code></h3><p><code>consume(line)</code> / <code>close()</code></p><p>解析原生 nnU-Net epoch 文本，并通过 <code>GrayLogger.metric()</code> 上报 <code>Loss</code>、<code>Pseudo Dice</code>、<code>Learning Rate</code> 和 <code>Epoch Time</code> 图表。</p></div>
+      <pre data-language="python">from gray.nnunet import NnUNetRunner
+from gray.utils.logging import get_logger
+
+logger = get_logger("training", output_dir)
+runner = NnUNetRunner(config, logger, device="cuda:0")
+runner.plan_and_preprocess()
+runner.train(class_names=["fetal_head"])
+runner.validate_checkpoint()</pre>
+    </section>
+
     <section id="utils">
       <h2>Utils</h2>
-      <div class="api"><h3><code>gray.utils.logging.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path, *, tracker=None) -&gt; GrayLogger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录；可选 ClearML Logger-compatible <code>tracker</code>。</td></tr><tr><th>输出</th><td><span class="type">GrayLogger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr><tr><th>语义方法</th><td><code>success(message)</code> 使用绿色粗体；<code>metric(name, value, iteration=0, title="Metrics")</code> 使用青色粗体；<code>warning</code> 为黄色，<code>error</code> 为红色粗体。</td></tr><tr><th>ClearML</th><td>建议通过 <code>Experiment.get_logger()</code> 获取：所有文本同步到 ClearML，metric 还会上报标量曲线；网页保存纯文本，不保留终端颜色。</td></tr><tr><th>文件日志</th><td>只写纯文本，不包含 Rich 颜色或样式标签。</td></tr></table></div>
+      <div class="api"><h3><code>gray.utils.logging.get_logger</code></h3><p><code>get_logger(name: str, output_dir: Path, *, tracker=None) -&gt; GrayLogger</code></p><table class="contract"><tr><th>输入</th><td><span class="type">str</span> logger 名称；<span class="type">pathlib.Path</span> 输出目录；可选 ClearML-compatible tracker。</td></tr><tr><th>输出</th><td><span class="type">GrayLogger</span>；写入 Rich console 和 <code>output_dir/run.log</code>，不向 root logger 传播。</td></tr><tr><th>语义方法</th><td><code>success(message)</code>、<code>metric(name, value, iteration=0, title="Metrics")</code> 和 <code>debug_sample(title, series, local_path, iteration=0, max_image_history=5)</code>。</td></tr><tr><th>实验跟踪</th><td><code>init_task(config, logger=logger)</code> 自动绑定 ClearML logger；文本、scalar 和 diagnostic image 均通过 GrayLogger 上报。</td></tr><tr><th>异常</th><td>metric 名称、数值、iteration 或 title 无效时失败；debug sample 文件不存在或 tracker 不支持 <code>report_image</code> 时失败。</td></tr><tr><th>文件日志</th><td>只写纯文本，不包含 Rich 颜色或样式标签。</td></tr></table></div>
+      <div class="api"><h3><code>gray.utils.logging.GrayLogger.bind_tracker</code></h3><p><code>bind_tracker(tracker) -&gt; None</code></p><p>运行时绑定提供 <code>report_text()</code> 与 <code>report_scalar()</code> 的 tracker；ClearML Task 初始化使用该接口。</p></div>
       <pre data-language="python">from gray.utils.logging import get_logger
 
 logger = get_logger("train", output_dir)
 logger.success("训练完成")
 logger.metric("validation_auc", 0.921)
+logger.debug_sample("Validation", "case_001", "debug/case_001.png")
 logger.warning("数据量不足")
 logger.error("checkpoint 保存失败")</pre>
       <div class="api"><h3><code>gray.utils.io.write_json / read_json</code></h3><p><code>write_json(path, value) -&gt; None</code> / <code>read_json(path) -&gt; dict[str, Any]</code></p><table class="contract"><tr><th>输入</th><td>JSON 文件路径；写入值必须是可 JSON 序列化的 mapping。</td></tr><tr><th>输出</th><td><code>write_json</code> 自动创建父目录并原子替换文件；<code>read_json</code> 返回对象根字典，格式无效或根类型错误时抛出 <code>ValueError</code>。</td></tr></table></div>
@@ -192,21 +220,22 @@ logits = [model(value) for value in variants.values()]</pre>
     </section>
 
     <section id="dicom">
-      <h2>DICOM / SimpleITK</h2>
-      <p class="lead">当前只使用 SimpleITK；不处理患者 metadata、Series 发现或 Series 选择。</p>
+      <h2>DICOM / pydicom</h2>
+      <p class="lead">pydicom 负责读取和像素解码，NumPy/SciPy 负责体数据运算；不处理患者 metadata 策略、Series 发现或 Series 选择。</p>
       <table><tr><th>函数</th><th>输入</th><th>输出</th><th>源码</th></tr>
-        <tr><td><code>read_series</code></td><td>项目已排序的 DICOM 路径列表</td><td><code>sitk.Image</code></td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/read_series.py#L10" target="_blank" rel="noopener">Source ↗</a></td></tr>
-        <tr><td><code>get_spacing</code></td><td><code>sitk.Image</code></td><td>正浮点 spacing 元组</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/get_spacing.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
-        <tr><td><code>apply_window_level</code></td><td>Image、window_width、window_center</td><td>映射到指定输出范围的 Image</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_window_level.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
-        <tr><td><code>apply_monochrome</code></td><td>Image、MONOCHROME1/2?</td><td>极性统一后的 Image</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_monochrome.py#L7" target="_blank" rel="noopener">Source ↗</a></td></tr>
-        <tr><td><code>resample_volume</code></td><td>Image、target_spacing、interpolator</td><td>重采样后的 Image；nearest 保持输入 pixel type，linear/bspline 为 float32</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/resample_volume.py#L11" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>read_series</code></td><td><code>Sequence[str | Path]</code></td><td><code>DicomVolume</code>，array 为 <code>(z,y,x)</code></td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/read_series.py#L14" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>get_spacing</code></td><td><code>DicomVolume</code></td><td><code>tuple[float, ...]</code>，顺序与 array 轴一致</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/get_spacing.py#L9" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>apply_window_level</code></td><td><code>DicomVolume</code>、float width/center/range</td><td>新 <code>DicomVolume</code>，array 为 float32</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_window_level.py#L12" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>apply_monochrome</code></td><td><code>DicomVolume</code>、可选 str interpretation</td><td>MONOCHROME2 极性的新 <code>DicomVolume</code></td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/apply_monochrome.py#L12" target="_blank" rel="noopener">Source ↗</a></td></tr>
+        <tr><td><code>resample_volume</code></td><td><code>DicomVolume</code>、spacing、interpolator、default value</td><td>新 <code>DicomVolume</code>；nearest 保持 dtype，linear/bspline 为 float32</td><td><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/source/gray/dicom/resample_volume.py#L15" target="_blank" rel="noopener">Source ↗</a></td></tr>
       </table>
-      <div class="api"><h3>DICOM 函数契约</h3><table class="contract"><tr><th>函数</th><th>支持输入</th><th>输出与约束</th></tr><tr><td><code>read_series</code></td><td><span class="type">Sequence[str | Path]</span>，已经选择且排序的 DICOM 文件。</td><td><span class="type">sitk.Image</span>；空序列抛出 <code>ValueError</code>，缺失文件抛出 <code>FileNotFoundError</code>。</td></tr><tr><td><code>get_spacing</code></td><td><span class="type">sitk.Image</span></td><td><span class="type">tuple[float, ...]</span>；所有 spacing 必须为有限正数。</td></tr><tr><td><code>apply_monochrome</code></td><td><span class="type">sitk.Image</span>；可选 <span class="type">str | None</span> interpretation。</td><td><span class="type">sitk.Image</span>；只接受 <code>MONOCHROME1</code> / <code>MONOCHROME2</code>。</td></tr><tr><td><code>apply_window_level</code></td><td><span class="type">sitk.Image</span>，<span class="type">float</span> width、center、output_min、output_max。</td><td><span class="type">sitk.Image</span> float32；width 必须 > 0，output_max 必须 > output_min。</td></tr><tr><td><code>resample_volume</code></td><td><span class="type">sitk.Image</span>，<span class="type">Sequence[float]</span> target_spacing，<span class="type">str</span> interpolator。</td><td><span class="type">sitk.Image</span>；仅 <code>nearest</code>、<code>linear</code>、<code>bspline</code>。</td></tr></table></div>
-      <div class="note">SimpleITK 读取 DICOM 时已经应用 rescale slope/intercept，Gray 不重复转换。mask/label 使用 <code>interpolator="nearest"</code>；<code>nearest</code> 保持输入 pixel type，<code>linear</code>/<code>bspline</code> 输出 float32。</div>
-        <div class="api"><h3>推荐处理顺序</h3><pre data-language="python">image = read_series(ordered_paths)
-image = apply_monochrome(image)           # MONOCHROME1 -&gt; 2
-image = apply_window_level(image, 400, 40)
-image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series</th><td>要求调用方已经完成 Series 选择和文件排序；空列表或缺失文件会抛出异常。</td></tr><tr><th>apply_window_level</th><td><code>lower=center-width/2</code>、<code>upper=center+width/2</code>，再映射到 <code>[output_min, output_max]</code>。</td></tr><tr><th>resample_volume</th><td>支持 <code>nearest</code>、<code>linear</code>、<code>bspline</code>；保持 origin 和 direction，并按物理范围计算新尺寸。</td></tr></table></div>
+      <div class="api"><h3>DICOM 函数契约</h3><table class="contract"><tr><th>函数</th><th>支持输入</th><th>输出与约束</th></tr><tr><td><code>read_series</code></td><td><span class="type">Sequence[str | Path]</span>，已经选择且排序的单帧 DICOM 文件。</td><td><span class="type">DicomVolume</span>；显式应用 Modality LUT/Rescale；校验 shape、PixelSpacing、Series UID 和均匀 slice spacing。</td></tr><tr><td><code>get_spacing</code></td><td><span class="type">DicomVolume</span></td><td><span class="type">tuple[float, ...]</span>；维数与 array 一致且均为有限正数。</td></tr><tr><td><code>apply_monochrome</code></td><td><span class="type">DicomVolume</span>；可选 <span class="type">str | None</span> interpretation。</td><td><span class="type">DicomVolume</span>；只接受 <code>MONOCHROME1</code> / <code>MONOCHROME2</code>，保持 dtype。</td></tr><tr><td><code>apply_window_level</code></td><td><span class="type">DicomVolume</span>，<span class="type">float</span> width、center、output_min、output_max。</td><td><span class="type">DicomVolume</span>，array 为 float32；width 必须 > 0，output_max 必须 > output_min。</td></tr><tr><td><code>resample_volume</code></td><td><span class="type">DicomVolume</span>，<span class="type">Sequence[float]</span> target_spacing，<span class="type">str</span> interpolator，<span class="type">float</span> default_value。</td><td><span class="type">DicomVolume</span>；仅 <code>nearest</code>、<code>linear</code>、<code>bspline</code>。</td></tr></table></div>
+      <div class="note">array 使用 <code>(z,y,x)</code>，spacing 使用 <code>(slice,row,column)</code>。mask/label 使用 <code>interpolator="nearest"</code>。压缩传输语法需要 pydicom 可用的像素解码插件。</div>
+        <div class="api"><h3>推荐处理顺序</h3><pre data-language="python">volume = read_series(ordered_paths)
+volume = apply_monochrome(volume)         # MONOCHROME1 -&gt; 2
+volume = apply_window_level(volume, 400, 40)
+volume = resample_volume(volume, (1.0, 1.0, 1.0))
+pixels = volume.array</pre><table><tr><th>read_series</th><td>要求调用方已经完成 Series 选择和文件排序；空列表、缺失文件、混合 Series 或几何不一致会抛出异常。</td></tr><tr><th>apply_window_level</th><td>使用 DICOM C.11.2 线性窗公式并映射到 <code>[output_min, output_max]</code>。</td></tr><tr><th>resample_volume</th><td>使用 SciPy 的 nearest、linear 或 cubic B-spline 插值，并按物理范围计算新 shape。</td></tr></table></div>
     </section>
 
 
@@ -226,10 +255,8 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
     var sources = {
       "gray.core.config.load_config": "core/config.py#L12",
       "gray.core.config.resolve_path": "core/config.py#L59",
-      "gray.experiment.Experiment": "experiment/clearml.py#L17",
+      "gray.experiment.init_task": "experiment/clearml.py#L8",
       "gray.experiment.artifact_dir": "experiment/artifacts.py#L10",
-      "gray.experiment.experiment_manifest": "experiment/manifest.py#L66",
-      "gray.experiment.experiment_report": "experiment/report.py#L30",
       "gray.callbacks.EarlyStopping": "callbacks/early_stopping.py#L9",
       "gray.inference.Ensemble": "inference/ensemble.py#L11",
       "gray.inference.tta": "inference/tta.py#L10",
@@ -237,7 +264,12 @@ image = resample_volume(image, (1.0, 1.0, 1.0))</pre><table><tr><th>read_series<
       "gray.runtime.resolve_device": "runtime/device.py#L5",
       "gray.runtime.seed_everything": "runtime/reproducibility.py#L10",
       "gray.runtime.seed_worker / torch_generator": "runtime/reproducibility.py#L34",
+      "gray.nnunet.NnUNetRunner": "nnunet/runner.py#L17",
+      "gray.nnunet.NnUNetRunner.validate_checkpoint": "nnunet/runner.py#L129",
+      "gray.nnunet.dataset_dir / model_dir / nnunet_environment": "nnunet/paths.py#L24",
+      "gray.nnunet.NnUNetLogReporter": "nnunet/metrics.py#L11",
       "gray.utils.logging.get_logger": "utils/logging.py#L131",
+      "gray.utils.logging.GrayLogger.bind_tracker": "utils/logging.py#L105",
       "gray.utils.io.write_json / read_json": "utils/io.py#L12",
       "gray.utils.hashing.sha256": "utils/hashing.py#L8"
     };
