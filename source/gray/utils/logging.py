@@ -174,6 +174,53 @@ class GrayLogger(logging.LoggerAdapter):
         self.log(METRIC, "%s=%s", name, numeric_value)
         if self._tracker is not None:
             self._tracker.report_scalar(title=title, series=name, value=numeric_value, iteration=iteration)
+            flush = getattr(self._tracker, "flush", None)
+            if callable(flush):
+                flush(wait=False)
+
+    def debug_sample(
+        self,
+        title: str,
+        series: str,
+        local_path: str | Path,
+        *,
+        iteration: int = 0,
+        max_image_history: int = 5,
+    ) -> None:
+        """Report one local diagnostic image to the bound experiment tracker.
+
+        The local Gray log records the uploaded path; the tracker receives the
+        image only when it implements ClearML-compatible ``report_image``.
+        """
+        if not isinstance(title, str) or not title.strip():
+            raise ValueError("debug sample title must not be empty")
+        if not isinstance(series, str) or not series.strip():
+            raise ValueError("debug sample series must not be empty")
+        if (
+            isinstance(iteration, bool)
+            or not isinstance(iteration, int)
+            or iteration < 0
+        ):
+            raise ValueError("debug sample iteration must be a non-negative integer")
+        path = Path(local_path).expanduser().resolve()
+        if not path.is_file():
+            raise FileNotFoundError(f"debug sample image not found: {path}")
+        self.info("debug_sample title=%s series=%s path=%s", title, series, path)
+        if self._tracker is None:
+            return
+        report_image = getattr(self._tracker, "report_image", None)
+        if not callable(report_image):
+            raise TypeError("tracker does not provide report_image")
+        report_image(
+            title=title,
+            series=series,
+            iteration=iteration,
+            local_path=str(path),
+            max_image_history=max_image_history,
+        )
+        flush = getattr(self._tracker, "flush", None)
+        if callable(flush):
+            flush(wait=False)
 
 
 class _GrayForwardHandler(logging.Handler):
