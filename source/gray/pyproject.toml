@@ -7,7 +7,7 @@ name = "gray"
 version = "0.1.0"
 description = "Gray Medical Computing Laboratory computer-vision framework template"
 requires-python = ">=3.10"
-dependencies = ["SimpleITK>=2.3", "hydra-core>=1.3", "numpy>=1.26", "rich>=13.7"]
+dependencies = ["hydra-core>=1.3", "numpy>=1.26", "pydicom>=3.0", "rich>=13.7", "scipy>=1.11"]
 
 [project.optional-dependencies]
 clearml = ["clearml>=1.16"]
@@ -16,8 +16,16 @@ clearml = ["clearml>=1.16"]
 gray = "gray.cli:main"
 
 [tool.setuptools]
-package-dir = {"" = "source"}
-
-[tool.setuptools.packages.find]
-where = ["source"]
-include = ["gray*"]
+package-dir = {"gray" = "."}
+packages = [
+  "gray",
+  "gray.callbacks",
+  "gray.core",
+  "gray.dicom",
+  "gray.experiment",
+  "gray.inference",
+  "gray.nnunet",
+  "gray.preprocess",
+  "gray.runtime",
+  "gray.utils",
+]

@@ -48,13 +48,14 @@ python examples/main.py
 
 ```python
 from gray import load_config
-from gray.experiment import Experiment
+from gray.experiment import init_task
 
 config = load_config("configs/exp_001.yaml")
-manifest = Experiment(config).run(train)
+task = init_task(config)
+result = train(config, task)
 ```
 
-`train(config, logger)` 返回 `(checkpoint, evaluation)`；Gray 自动完成日志、ClearML 状态、manifest 和 checkpoint 上传。
+`train(config, task)` 接收原生 ClearML `Task`。训练代码直接通过 `task.get_logger()`、`task.connect()`、`task.upload_artifact()`、`task.update_output_model()` 等 ClearML API 管理日志、指标、参数、产物和模型。正常进程退出与未捕获异常由 ClearML 自动标记为完成或失败；异常若被业务代码捕获并吞掉，调用方必须自行设置 Task 状态。
 
 ## 项目集成
 
@@ -117,20 +118,21 @@ logits = [model(variant) for variant in variants.values()]
 
 ## DICOM 处理
 
-可选的 `gray.dicom` 模块只使用 SimpleITK。项目负责 Series 选择和文件排序，Gray 负责像素强度与空间处理。
+`gray.dicom` 使用 pydicom 解码 DICOM，并用 NumPy/SciPy 完成像素与体数据处理。项目负责 Series 发现、选择和文件排序；Gray 显式应用 Modality LUT 或 Rescale Slope/Intercept，并负责极性、窗宽窗位和 spacing-aware 重采样。
 
 ```python
 from gray.dicom import apply_monochrome, apply_window_level
 from gray.dicom import get_spacing, read_series, resample_volume
 
-image = read_series(ordered_dicom_files)
-image = apply_monochrome(image)
-image = apply_window_level(image, window_width=400, window_center=40)
-image = resample_volume(image, target_spacing=(1.0, 1.0, 1.0))
-spacing = get_spacing(image)
+volume = read_series(ordered_dicom_files)  # array: (z, y, x)
+volume = apply_monochrome(volume)
+volume = apply_window_level(volume, window_width=400, window_center=40)
+volume = resample_volume(volume, target_spacing=(1.0, 1.0, 1.0))
+spacing = get_spacing(volume)              # (slice, row, column)
+pixels = volume.array
 ```
 
-mask 和 label 使用 `interpolator="nearest"`。SimpleITK 读取 DICOM 时已经应用 rescale slope/intercept，Gray 不重复转换。
+mask 和 label 使用 `interpolator="nearest"`。压缩 DICOM 是否可解码取决于 pydicom 环境中安装的像素解码插件。
 
 ## 边界
 
@@ -174,13 +176,14 @@ The standard managed entry point is:
 
 ```python
 from gray import load_config
-from gray.experiment import Experiment
+from gray.experiment import init_task
 
 config = load_config("configs/exp_001.yaml")
-manifest = Experiment(config).run(train)
+task = init_task(config)
+result = train(config, task)
 ```
 
-`train(config, logger)` returns `(checkpoint, evaluation)`; Gray manages logging, ClearML status, the manifest, and checkpoint upload.
+`train(config, task)` receives the native ClearML `Task`. Training code owns logs, metrics, parameters, artifacts, and model registration through APIs such as `task.get_logger()`, `task.connect()`, `task.upload_artifact()`, and `task.update_output_model()`. ClearML marks normal process exit as completed and uncaught exceptions as failed. If project code catches and suppresses an exception, it must set the Task status itself.
 
 ## Project Integration
 
@@ -219,7 +222,7 @@ logits = [model(variant) for variant in variants.values()]
 
 ## DICOM Processing
 
-The optional `gray.dicom` module uses SimpleITK only. The project selects and orders the Series; Gray handles pixel polarity, windowing, and spatial processing. Use `interpolator="nearest"` for masks and labels. SimpleITK already applies DICOM rescale slope/intercept while reading.
+The `gray.dicom` module uses pydicom for decoding and NumPy/SciPy for volume processing. The project discovers, selects, and orders the Series. Gray explicitly applies the Modality LUT or Rescale Slope/Intercept, then handles polarity, windowing, and spacing-aware resampling. Arrays use `(z, y, x)` order and spacing uses `(slice, row, column)` order. Use `interpolator="nearest"` for masks and labels. Compressed DICOM transfer syntaxes require a compatible pydicom pixel decoder plugin.
 
 ## Boundaries
 
