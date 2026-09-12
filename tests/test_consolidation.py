@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,8 +10,8 @@ import pytest
 from gray.callbacks import EarlyStopping
 from gray.core.config import load_config
 from gray.dicom import (
-    DicomVolume,
     apply_monochrome,
+    apply_rescale_slope_intercept,
     apply_window_level,
     get_spacing,
     read_series,
@@ -81,29 +81,26 @@ def test_artifact_dir_rejects_escaping_experiment_id(tmp_path: Path) -> None:
 
 
 def test_dicom_linear_window_handles_width_one() -> None:
-    image = DicomVolume(
-        array=np.array([[-1, 0, 1]], dtype=np.int16),
-        spacing=(1.0, 1.0),
-        datasets=(),
-        photometric_interpretation="MONOCHROME2",
-    )
+    image = np.array([[-1, 0, 1]], dtype=np.int16)
     result = apply_window_level(image, 1, 0)
-    np.testing.assert_array_equal(result.array, [[0.0, 1.0, 1.0]])
-    assert result.array.dtype == np.float32
+    np.testing.assert_array_equal(result, [[0.0, 1.0, 1.0]])
+    assert result.dtype == np.float32
 
 
 def test_monochrome_inversion_avoids_integer_overflow() -> None:
-    image = DicomVolume(
-        array=np.array([[0, 65535]], dtype=np.uint16),
-        spacing=(1.0, 1.0),
-        datasets=(),
-        photometric_interpretation="MONOCHROME1",
-    )
+    image = np.array([[0, 65535]], dtype=np.uint16)
 
-    result = apply_monochrome(image)
+    result = apply_monochrome(image, "MONOCHROME1")
 
-    np.testing.assert_array_equal(result.array, [[65535, 0]])
-    assert result.array.dtype == np.uint16
+    np.testing.assert_array_equal(result, [[65535, 0]])
+    assert result.dtype == np.uint16
+
+
+def test_rescale_slope_intercept_returns_modality_values() -> None:
+    stored = np.array([[-1, 0, 2]], dtype=np.int16)
+    result = apply_rescale_slope_intercept(stored, slope=2, intercept=-1000)
+    np.testing.assert_array_equal(result, [[-1002.0, -1000.0, -996.0]])
+    assert result.dtype == np.float64
 
 
 def test_pydicom_series_decoding_and_volume_operations(tmp_path: Path) -> None:
@@ -121,19 +118,37 @@ def test_pydicom_series_decoding_and_volume_operations(tmp_path: Path) -> None:
         np.array([[4, 5], [6, 7]], dtype=np.int16),
     )
 
-    volume = read_series([first, second])
+    paths = [first, second]
+    volume = read_series(paths)
 
-    assert volume.array.shape == (2, 2, 2)
-    assert get_spacing(volume) == (2.0, 0.5, 0.75)
-    np.testing.assert_array_equal(volume.array[0], [[-1000, -998], [-996, -994]])
-    normalized = apply_monochrome(volume)
-    assert normalized.photometric_interpretation == "MONOCHROME2"
-    np.testing.assert_array_equal(
-        normalized.array, volume.array.max() + volume.array.min() - volume.array
+    assert volume.shape == (2, 2, 2)
+    spacing = get_spacing(paths)
+    assert spacing == (2.0, 0.5, 0.75)
+    np.testing.assert_array_equal(volume[0], [[-1000, -998], [-996, -994]])
+    normalized = apply_monochrome(volume, "MONOCHROME1")
+    np.testing.assert_array_equal(normalized, volume.max() + volume.min() - volume)
+    resampled = resample_volume(
+        normalized,
+        source_spacing=spacing,
+        target_spacing=(1.0, 0.5, 0.75),
+        interpolator="nearest",
     )
-    resampled = resample_volume(normalized, (1.0, 0.5, 0.75), interpolator="nearest")
-    assert resampled.array.shape == (4, 2, 2)
-    assert resampled.array.dtype == normalized.array.dtype
+    assert resampled.shape == (4, 2, 2)
+    assert resampled.dtype == normalized.dtype
+
+
+def test_read_series_rejects_nonuniform_slice_spacing(tmp_path: Path) -> None:
+    series_uid = generate_uid()
+    pixels = np.zeros((2, 2), dtype=np.int16)
+    paths = [
+        _write_dicom_slice(
+            tmp_path / f"slice-{index}.dcm", position, series_uid, pixels
+        )
+        for index, position in enumerate((0.0, 1.0, 3.0))
+    ]
+
+    with pytest.raises(ValueError, match="uniform spacing"):
+        read_series(paths)
 
 
 def _write_dicom_slice(
@@ -151,7 +166,7 @@ def _write_dicom_slice(
     dataset.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
     dataset.SeriesInstanceUID = series_uid
     dataset.PatientName = "Test^Patient"
-    dataset.StudyDate = datetime.now().strftime("%Y%m%d")
+    dataset.StudyDate = datetime.now(timezone.utc).strftime("%Y%m%d")
     dataset.Modality = "CT"
     dataset.Rows, dataset.Columns = pixels.shape
     dataset.PixelSpacing = [0.5, 0.75]
@@ -190,20 +205,57 @@ def test_logger_can_bind_clearml_tracker_after_construction(tmp_path: Path) -> N
     calls: list[tuple[str, dict[str, object]]] = []
 
     class Tracker:
+        def __init__(self) -> None:
+            self.flushes: list[bool] = []
+
         def report_text(self, message: str, **options: object) -> None:
             calls.append((message, options))
 
         def report_scalar(self, **options: object) -> None:
             calls.append(("scalar", options))
 
+        def flush(self, *, wait: bool) -> None:
+            self.flushes.append(wait)
+
     logger = get_logger("tracker-bind", tmp_path)
-    logger.bind_tracker(Tracker())
+    tracker = Tracker()
+    logger.bind_tracker(tracker)
     logger.metric("train_loss", 0.25, iteration=3, title="Loss")
 
     assert calls[-1] == (
         "scalar",
         {"title": "Loss", "series": "train_loss", "value": 0.25, "iteration": 3},
     )
+    assert tracker.flushes == [False]
+    logger.close()
+
+
+def test_logger_reports_debug_sample_to_tracker(tmp_path: Path) -> None:
+    sample = tmp_path / "sample.png"
+    sample.write_bytes(b"png")
+    calls: list[dict[str, object]] = []
+
+    class Tracker:
+        def report_text(self, message: str, **options: object) -> None:
+            del message, options
+
+        def report_scalar(self, **options: object) -> None:
+            del options
+
+        def report_image(self, **options: object) -> None:
+            calls.append(options)
+
+    logger = get_logger("debug-sample", tmp_path, tracker=Tracker())
+    logger.debug_sample("Validation", "confusion_matrix", sample, iteration=1)
+    assert calls == [
+        {
+            "title": "Validation",
+            "series": "confusion_matrix",
+            "iteration": 1,
+            "local_path": str(sample.resolve()),
+            "max_image_history": 5,
+        }
+    ]
     logger.close()
 
 

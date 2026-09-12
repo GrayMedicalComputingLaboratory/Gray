@@ -88,6 +88,19 @@ def remove_background(
 
 
 def _normalize_colors(colors: ArrayLike, channel_count: int | None) -> NDArray[np.float64]:
+    """Normalize background colors for scalar or channel-valued pixels.
+
+    Args:
+        colors: Numeric scalar, color vector, or matrix of color vectors.
+        channel_count: Expected channel count, or ``None`` for scalar pixels.
+
+    Returns:
+        Float64 color candidates shaped for subsequent matching.
+
+    Raises:
+        TypeError: If colors cannot be converted to numeric values.
+        ValueError: If values are non-finite or channel shapes do not match.
+    """
     try:
         values = np.asarray(colors, dtype=np.float64)
     except (TypeError, ValueError) as error:
@@ -109,6 +122,19 @@ def _normalize_colors(colors: ArrayLike, channel_count: int | None) -> NDArray[n
 
 
 def _normalize_axes(spatial_axes: Sequence[int], ndim: int) -> tuple[int, ...]:
+    """Validate, normalize, and sort NumPy spatial axes.
+
+    Args:
+        spatial_axes: Sequence containing at least two distinct integer axes.
+        ndim: Number of dimensions in the input array.
+
+    Returns:
+        Sorted tuple of unique non-negative axes.
+
+    Raises:
+        TypeError: If axes are not supplied as a sequence of integers.
+        ValueError: If too few, duplicate, or out-of-range axes are supplied.
+    """
     if isinstance(spatial_axes, (str, bytes)) or not isinstance(spatial_axes, Sequence):
         raise TypeError("spatial_axes must be a sequence of integer axes")
     if len(spatial_axes) < 2:

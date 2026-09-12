@@ -6,26 +6,26 @@ from pathlib import Path
 from typing import Any
 
 from gray import load_config
-from gray.experiment import Experiment, artifact_dir
+from gray.experiment import artifact_dir, init_task
 from gray.runtime import seed_everything
 from gray.utils.io import write_json
-from gray.utils.logging import GrayLogger
 
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "demo.yaml"
 
 
-def train(config: dict[str, Any], logger: GrayLogger) -> tuple[Path, dict[str, Any]]:
+def train(config: dict[str, Any], task: Any) -> Path:
     """Run a small replaceable training loop and save its model checkpoint.
 
     Args:
         config: Resolved Gray experiment configuration.
-        logger: Logger connected to the terminal, local file, and ClearML.
+        task: Native ClearML Task for logging, metrics, and artifacts.
 
     Returns:
-        The saved checkpoint path and final evaluation metrics.
+        The saved checkpoint path.
     """
     seed_everything(config["train"]["seed"])
+    logger = task.get_logger()
     epochs = config["train"]["epochs"]
     if isinstance(epochs, bool) or not isinstance(epochs, int) or epochs < 1:
         raise ValueError("train.epochs must be a positive integer")
@@ -34,9 +34,9 @@ def train(config: dict[str, Any], logger: GrayLogger) -> tuple[Path, dict[str, A
     for epoch in range(1, epochs + 1):
         train_loss = 1.0 / epoch
         validation_auc = min(1.0, 0.80 + epoch * 0.03)
-        logger.info("epoch=%s/%s", epoch, epochs)
-        logger.metric("train_loss", train_loss, iteration=epoch)
-        logger.metric("validation_auc", validation_auc, iteration=epoch)
+        logger.report_text(f"epoch={epoch}/{epochs}")
+        logger.report_scalar(title="Metrics", series="train_loss", value=train_loss, iteration=epoch)
+        logger.report_scalar(title="Metrics", series="validation_auc", value=validation_auc, iteration=epoch)
 
     checkpoint = artifact_dir(config, "train", create=True) / "model.json"
     write_json(
@@ -46,9 +46,19 @@ def train(config: dict[str, Any], logger: GrayLogger) -> tuple[Path, dict[str, A
             "validation_auc": validation_auc,
         },
     )
-    evaluation = {"status": "passed", "validation_auc": validation_auc}
-    logger.success("training completed: %s", checkpoint)
-    return checkpoint, evaluation
+    task.connect(
+        {"status": "passed", "validation_auc": validation_auc},
+        name="Evaluation",
+        ignore_remote_overrides=True,
+    )
+    logger.report_single_value(name="validation_auc", value=validation_auc)
+    task.update_output_model(
+        model_path=str(checkpoint),
+        model_name=config["model"]["model_version"],
+        auto_delete_file=False,
+    )
+    logger.report_text(f"training completed: {checkpoint}")
+    return checkpoint
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -59,7 +69,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     config = load_config(args.config, args.override)
-    Experiment(config).run(train)
+    train(config, init_task(config))
 
 
 if __name__ == "__main__":

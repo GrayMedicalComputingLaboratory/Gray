@@ -17,6 +17,7 @@ data:
 model:
   architecture: demo-classifier
   model_version: v1
+  framework: PyTorch
 
 train:
   seed: 42

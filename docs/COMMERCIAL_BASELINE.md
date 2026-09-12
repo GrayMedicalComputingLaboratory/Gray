@@ -8,7 +8,7 @@ Gray is a commercial framework baseline, not a production medical-device release
 - Config filename defines `experiment_id`. The config directory and filename must agree.
 - All generated artifacts use `outputs/<experiment_id>/<stage>/` and stages are created only on write.
 - Device values are `cpu`, `cuda`, `cuda:N`, or non-negative GPU indexes. Invalid CUDA requests fail explicitly.
-- Each training run has `experiment/manifest.json` linking dataset, Git, config, run, model, checkpoint SHA-256 and evaluation identities.
+- Each project records its required dataset, evaluation, and model lineage directly through native ClearML APIs. Gray only initializes the Task and connects the resolved config; ClearML owns process status tracking.
 - Every command records a file log under the experiment `logs` stage.
 
 ## Required task-plugin responsibilities

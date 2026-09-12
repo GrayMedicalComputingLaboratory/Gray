@@ -119,18 +119,17 @@ logits = [model(variant) for variant in variants.values()]
 
 ## DICOM 处理
 
-`gray.dicom` 使用 pydicom 解码 DICOM，并用 NumPy/SciPy 完成像素与体数据处理。项目负责 Series 发现、选择和文件排序；Gray 显式应用 Modality LUT 或 Rescale Slope/Intercept，并负责极性、窗宽窗位和 spacing-aware 重采样。
+`gray.dicom` 使用 pydicom 解码 DICOM，并用 NumPy/SciPy 完成像素与体数据处理。接口直接接收和返回 NumPy 数组，不引入自定义影像容器。项目负责 Series 发现、选择和文件排序；Gray 显式应用 Modality LUT 或 Rescale Slope/Intercept，并负责极性、窗宽窗位和 spacing-aware 重采样。
 
 ```python
 from gray.dicom import apply_monochrome, apply_window_level
 from gray.dicom import get_spacing, read_series, resample_volume
 
-volume = read_series(ordered_dicom_files)  # array: (z, y, x)
-volume = apply_monochrome(volume)
-volume = apply_window_level(volume, window_width=400, window_center=40)
-volume = resample_volume(volume, target_spacing=(1.0, 1.0, 1.0))
-spacing = get_spacing(volume)              # (slice, row, column)
-pixels = volume.array
+pixels = read_series(ordered_dicom_files)  # ndarray: (z, y, x)
+spacing = get_spacing(ordered_dicom_files) # (slice, row, column)
+pixels = apply_monochrome(pixels, "MONOCHROME1")
+pixels = apply_window_level(pixels, window_width=400, window_center=40)
+pixels = resample_volume(pixels, spacing, target_spacing=(1.0, 1.0, 1.0))
 ```
 
 mask 和 label 使用 `interpolator="nearest"`。压缩 DICOM 是否可解码取决于 pydicom 环境中安装的像素解码插件。
@@ -224,7 +223,7 @@ logits = [model(variant) for variant in variants.values()]
 
 ## DICOM Processing
 
-The `gray.dicom` module uses pydicom for decoding and NumPy/SciPy for volume processing. The project discovers, selects, and orders the Series. Gray explicitly applies the Modality LUT or Rescale Slope/Intercept, then handles polarity, windowing, and spacing-aware resampling. Arrays use `(z, y, x)` order and spacing uses `(slice, row, column)` order. Use `interpolator="nearest"` for masks and labels. Compressed DICOM transfer syntaxes require a compatible pydicom pixel decoder plugin.
+The `gray.dicom` module uses pydicom for decoding and NumPy/SciPy for volume processing. Its APIs accept and return NumPy arrays without a custom image container. The project discovers, selects, and orders the Series. Gray explicitly applies the Modality LUT or Rescale Slope/Intercept, then handles polarity, windowing, and spacing-aware resampling. Arrays use `(z, y, x)` order and spacing uses `(slice, row, column)` order. Use `interpolator="nearest"` for masks and labels. Compressed DICOM transfer syntaxes require a compatible pydicom pixel decoder plugin.
 
 ## Boundaries
 

@@ -32,6 +32,18 @@ class EarlyStopping:
         mode: Literal["min", "max"] = "min",
         min_delta: float = 0.0,
     ) -> None:
+        """Initialize metric direction, patience, and improvement threshold.
+
+        Args:
+            patience: Number of consecutive non-improving steps tolerated.
+            mode: ``"min"`` for a decreasing metric or ``"max"`` for an
+                increasing metric.
+            min_delta: Finite non-negative change required for improvement.
+
+        Raises:
+            TypeError: If an argument has an invalid type.
+            ValueError: If a numeric value or mode is outside its contract.
+        """
         if isinstance(patience, bool) or not isinstance(patience, int):
             raise TypeError("patience must be an integer")
         if patience < 0:
@@ -149,6 +161,15 @@ class EarlyStopping:
         self.stopped = stopped
 
     def _is_improvement(self, value: float) -> bool:
+        """Compare one validated metric value with the current best value.
+
+        Args:
+            value: Finite numeric metric value for the current step.
+
+        Returns:
+            ``True`` when ``value`` improves by more than ``min_delta`` or no
+            best value has been recorded; otherwise ``False``.
+        """
         if self.best_value is None:
             return True
         if self.mode == "min":

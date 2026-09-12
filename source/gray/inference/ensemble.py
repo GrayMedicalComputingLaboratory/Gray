@@ -78,6 +78,20 @@ def Ensemble(
 
 
 def _normalize_weights(weights: Sequence[float] | None, model_count: int) -> NDArray[np.float64]:
+    """Validate and normalize ensemble weights without overflow.
+
+    Args:
+        weights: One finite non-negative numeric weight per model.
+        model_count: Required number of weights.
+
+    Returns:
+        Float64 one-dimensional array whose values sum to one.
+
+    Raises:
+        TypeError: If weights are not a numeric sequence.
+        ValueError: If count, shape, finiteness, sign, or total weight is
+            invalid.
+    """
     if weights is None:
         raise ValueError("weights are required when method='weighted'")
     if isinstance(weights, (str, bytes)) or not isinstance(weights, Sequence):

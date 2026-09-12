@@ -12,15 +12,13 @@ Every source file has one owner and one responsibility.
 | `source/gray/inference/tta.py` | Selected in-plane inference-time flip and Rotate90 variants. | Model calls, prediction aggregation or training augmentation. |
 | `source/gray/preprocess/remove_background.py` | Crop margins matching one or more background colors from selected NumPy image axes. | Dataset policy, image decoding or clinical intensity normalization. |
 | `source/gray/experiment/artifacts.py` | Deterministic local artifact directories by experiment and stage. | File schemas, artifact uploads or training logic. |
-| `source/gray/experiment/manifest.py` | Structured Experiment-Dataset-Code-Config-Training-Model-Evaluation lineage manifests. | Artifact persistence, training logic or remote tracking SDK calls. |
-| `source/gray/experiment/report.py` | Rich configuration, environment and optional experiment lineage reporting. | Manifest mutation, artifact persistence or model promotion decisions. |
-| `source/gray/experiment/clearml.py` | ClearML Task lifecycle, configuration linkage and final experiment artifact upload. | Training loops, metric definitions, model promotion or deployment. |
+| `source/gray/experiment/clearml.py` | Map resolved Gray config into native ClearML Task initialization. | Lifecycle status, logging, metrics, artifacts, models, metadata policy, training loops, promotion or deployment. |
 | `source/gray/runtime/device.py` | Explicit CPU/CUDA device validation. | Seeding, model execution or CUDA memory policy. |
 | `source/gray/runtime/reproducibility.py` | Process, DataLoader worker and PyTorch generator reproducibility controls. | Data loading policy, logging or artifact IO. |
 | `source/gray/utils/logging.py` | Semantic terminal/file logging with an optional remote logger bridge. | Experiment lifecycle, metric aggregation or tracking SDK initialization. |
 | `source/gray/utils/io.py` | Small UTF-8 JSON artifact writes. | Project result schemas or data loading. |
 | `source/gray/utils/hashing.py` | Streaming file SHA-256 calculation. | Model identity, artifact policy or experiment metadata. |
-| `source/gray/dicom/<operation>.py` | SimpleITK-backed pixel and volume processing: read, window/level, polarity and resampling. | Raw stored-pixel rescaling, patient metadata, Series discovery/selection, UID policy or clinical labels. |
+| `source/gray/dicom/<operation>.py` | Stateless pydicom decoding and NumPy processing: rescale slope/intercept, modality LUT, window/level, polarity and spacing-aware resampling. | Custom image containers, patient metadata policy, Series discovery/selection, UID generation or clinical labels. |
 
 ## Project Boundary
 
