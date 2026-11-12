@@ -1,0 +1,17 @@
+schema_version: "1.0"
+model:
+  name: synthetic-identity-3d
+  version: "1.0.0"
+  task_type: tensor
+  format: onnx
+  path: model_3d.onnx
+runtime:
+  backend: onnxruntime
+input:
+  name: input
+  dim: NCDHW
+  dtype: float32
+  shape: [1, 1, 4, 8, 8]
+outputs:
+  - name: output
+    type: identity_tensor

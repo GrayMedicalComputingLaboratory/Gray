@@ -10,12 +10,16 @@ requires-python = ">=3.10"
 dependencies = ["hydra-core>=1.3", "numpy>=1.26", "pydicom>=3.0", "rich>=13.7", "scipy>=1.11"]
 
 [project.optional-dependencies]
+sdk = ["PyYAML>=6.0", "onnxruntime>=1.18", "Pillow>=10"]
+sdk-cuda = ["PyYAML>=6.0", "onnxruntime-gpu>=1.18", "Pillow>=10"]
+sdk-dev = ["PyYAML>=6.0", "onnxruntime>=1.18", "onnx>=1.16", "Pillow>=10", "pytest>=8", "ruff>=0.9", "build>=1.2"]
 clearml = ["clearml>=1.16"]
 nnunet = ["nnunetv2>=2.6"]
 train = ["clearml>=1.16", "nnunetv2>=2.6"]
 
 [project.scripts]
 gray = "gray.cli:main"
+gray-sdk = "gray.sdk.cli:main"
 
 [tool.setuptools]
 package-dir = {"gray" = "."}
@@ -29,5 +33,6 @@ packages = [
   "gray.nnunet",
   "gray.preprocess",
   "gray.runtime",
+  "gray.sdk",
   "gray.utils",
 ]

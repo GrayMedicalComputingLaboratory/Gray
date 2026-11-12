@@ -10,4 +10,14 @@ data/
 *.onnx
 *.npz
 *.npy
+!examples/sdk/model/*.onnx
+!examples/sdk/input/*.npy
 *.egg-info/
+.venv-sdk/
+.pytest-tmp-sdk*/
+.ruff_cache/
+.venv-sdk-wheel/
+.venv-sdk-simple/
+.uv-cache/
+dist/
+build/

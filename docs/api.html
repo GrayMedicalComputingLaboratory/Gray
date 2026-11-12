@@ -46,6 +46,7 @@
 </header>
 <main>
   <nav>
+    <a href="#sdk">Python inference SDK</a>
     <strong><img src="assets/gray-mark.png" alt="">目录</strong>
     <a href="#install">安装与约定</a>
     <a href="#config">配置与 CLI</a>
@@ -240,6 +241,57 @@ pixels = resample_volume(pixels, spacing, (1.0, 1.0, 1.0))</pre><table><tr><th>r
     </section>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<section id="sdk">
+  <h2>Python inference SDK v1</h2>
+  <div class="api">
+  <h3><code>model.predict(path, dim=None)</code></h3>
+  <p>直接读取 PNG、JPG/JPEG、BMP、TIFF 或 WebP 并执行推理。灰度图按 HW 解释，彩色图转换为 RGB 并按 HWC 解释；彩色模型要求通道在前时传 <code>dim="CHW"</code>。解码应用 EXIF 方向，带 alpha 的图像去掉 alpha。不会自动缩放像素、改变尺寸、归一化或窗宽窗位处理。</p>
+  <pre data-language="python">from gray.sdk import load_model
+
+model = load_model("models/my-model")  # 目录中包含 manifest.yaml
+try:
+    result = model.predict("images/sample.png")
+    prediction = result.outputs["segmentation"]
+finally:
+    model.close()</pre>
+  <h3><code>load_image(path, dim=None)</code></h3>
+  <p>单独读取 PNG、JPG/JPEG、BMP、TIFF 或 WebP，返回 <code>ImageInput</code>，方便在推理前检查解码数组或补充医学空间来源信息。灰度图的数组维度为 HW，彩色图为 RGB HWC；可指定彩色轴顺序 CHW。安装 <code>gray[sdk]</code> 可获得 Pillow 解码器。</p>
+  <h3><code>load_model(path, device="cpu")</code></h3>
+  <p>加载包含 <code>manifest.yaml</code> 的模型目录或直接加载 YAML 路径。调用
+  <code>model.predict(image)</code> 推理一张图片，或调用
+  <code>model.predict(array, dim="HW")</code> 传入 NumPy 数组并声明各轴含义。
+  返回值 <code>InferenceResult</code> 包含任务标记、按输出名称索引的 NumPy 张量、来源元数据和毫秒耗时。</p>
+  <h3><code>GrayRuntime.from_manifest(path, device="cpu", license_validator=None)</code></h3>
+  <p>高级加载入口，可在模型引擎初始化前执行本地 <code>license_validator(manifest)</code>。
+  <code>ImageInput(data, dim, dtype=None, spacing=None, direction=None, window_applied=None)</code>
+  携带显式维度和可选医学空间来源信息。<code>close()</code> 可重复调用；关闭后推理会抛出
+  <code>RuntimeClosedError</code>。推理完成后请显式关闭运行时。</p>
+  <p><strong>维度速查：</strong>HW 是单张灰度 2D；HWC/CHW 是单张通道图；DHW 是单个 3D 体数据；
+  NCHW/BCHW 是一批 2D 图片；NDHW/BDHW 是一批单通道 3D 体数据；NCDHW/BCDHW 是一批多通道 3D 体数据。
+  B 和 N 都表示批次轴，大小写不敏感。2.5D 模型可用 NCHW 的 C 轴表示相邻切片。</p>
+  <p><code>predict_batch(array, dim="NCHW")</code> 接收已经组合好的批次；也可以接收图片路径、单张数组或
+  <code>ImageInput</code> 列表并传入单项的 dim，例如 CHW 或 DHW。模型必须有 B/N 轴；动态批次需在
+  Manifest 的相应 <code>input.shape</code> 位置使用 null。所有数组需满足模型 shape 和 dtype。</p>
+  <p>图片解码与模型预处理分开配置。SDK 不猜测 RGB/BGR、不会默认除以 255，也不自动 resize、softmax、argmax、解码检测框或解释临床含义。类型转换和线性归一化只在 Manifest 显式配置 <code>input.preprocessing</code> 后执行。</p>
+  <p>CLI 命令为 <code>gray-sdk infer/info/speed</code>；<code>--input</code> 支持 NPY 数组和常见图片，批次数组用 <code>--dim NCHW</code> 等标注。推理结果写入新建目录的 <code>outputs.npz</code> 和 <code>metadata.json</code>。开发者运行 <code>python build_sdk.py</code> 生成 wheel。</p>
+  <p>错误类型：GraySDKError、ManifestError、InputError、BackendError、InferenceError、RuntimeClosedError。CLI 参数错误返回 2，模型/输入/推理失败返回 1。</p>
+  <p><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/SDK.md">Complete SDK API, manifest, geometry and deployment reference</a></p>
+  </div>
+</section>
     <section id="boundaries">
       <h2>边界</h2>
       <p>Gray 不提供通用 Web、模型、Dataset、loss、推理服务、患者 metadata 策略、Series 选择、DICOM 编码、临床标签规则。项目级语义必须留在项目仓库。</p>
@@ -318,5 +370,6 @@ pixels = resample_volume(pixels, spacing, (1.0, 1.0, 1.0))</pre><table><tr><th>r
     });
   }());
 </script>
+
 </body>
 </html>

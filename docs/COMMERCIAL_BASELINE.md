@@ -2,6 +2,12 @@
 
 Gray is a commercial framework baseline, not a production medical-device release.
 
+The optional [Python inference SDK](SDK.md) adds offline local ONNX execution as
+a separate layer. Model selection, clinical interpretation and task validation
+remain customer-owned. SDK execution does not create experiment logs or save
+input images. Its CLI persists only requested predictions and execution metadata.
+See [actual SDK validation and delivery gaps](SDK_VALIDATION.md).
+
 ## Enforced framework contracts
 
 - Source code is under `source/`; tests are under `tests/`; input data is never written by framework code.
