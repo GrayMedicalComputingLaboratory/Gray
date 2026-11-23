@@ -11,7 +11,7 @@
 
 # Gray 中文说明
 
-推理 SDK 位于同级的 [`gray_sdk`](https://github.com/GrayMedicalComputingLaboratory/gray_sdk) 项目。
+推理 SDK 位于同级的 [`gray_sdk`](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/SDK.md) 项目。
 
 Gray 是 Gray Medical Computing Laboratory 的轻量、可复用训练研究基础框架。
 它提供配置身份、可复现性、产物路径、生命周期调度和扩展契约；模型、数据集、指标、增强、损失和推理仍由具体项目负责。
@@ -146,7 +146,7 @@ Gray 不规定通用图像 CSV、模型基类、loss、Web UI、推理服务、3
 
 The independent `gray_sdk` adds local ONNX CPU/optional CUDA inference through
 the `gray` CLI. Existing training APIs remain supported. See the
-[SDK documentation](https://github.com/GrayMedicalComputingLaboratory/gray_sdk).
+[SDK documentation](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/SDK.md).
 
 Gray is a small, reusable training-research foundation for Gray Medical Computing Laboratory.
 It provides configuration identity, reproducibility, artifact paths, lifecycle dispatching and extension contracts. Models, datasets, metrics, augmentation, losses and inference remain owned by each project.
