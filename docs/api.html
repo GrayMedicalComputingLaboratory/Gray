@@ -66,13 +66,13 @@
       <h2>安装与约定</h2>
       <p class="lead">Gray 不包含项目专用模型、数据集和训练循环。项目通过 entrypoint 接入 Gray。</p>
       <pre data-language="shell">python -m pip install --upgrade \
-  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
 
 # Local editable installation
-python -m pip install -e /path/to/Gray/source/gray
+python -m pip install -e /path/to/Gray-main
 
 # ClearML + native nnU-Net v2
-python -m pip install -e "/path/to/Gray/source/gray[train]"</pre>
+python -m pip install -e "/path/to/Gray-main[train]"</pre>
       <div class="note">每个实验只维护一个 YAML；YAML 文件名就是 <code>experiment_id</code>。生成的 trial 配置只是运行快照，不是第二份人工配置。</div>
       <div class="api"><h3>类型速查 / Type guide</h3><table class="contract"><tr><th>标记</th><th>含义</th><th>典型值</th></tr><tr><td><span class="type">PathLike</span></td><td>字符串或 <code>pathlib.Path</code> 文件路径。</td><td><code>"configs/exp_00.yaml"</code></td></tr><tr><td><span class="type">Sequence[T]</span></td><td>列表、元组或其他可迭代序列；除非特别说明，不接受空序列。</td><td><code>["BCC", "Non-BCC"]</code></td></tr><tr><td><span class="type">ArrayLike</span></td><td>NumPy 数组或可转换为数组的实数序列。</td><td><code>np.ndarray</code>、<code>list[float]</code></td></tr><tr><td><span class="type">torch.Tensor</span></td><td>PyTorch 张量；TTA 保留 dtype、device 和梯度语义。</td><td><code>[C,H,W]</code> 或 <code>[C,D,H,W]</code></td></tr></table></div>
     </section>
@@ -260,7 +260,7 @@ pixels = resample_volume(pixels, spacing, (1.0, 1.0, 1.0))</pre><table><tr><th>r
   <div class="api">
   <h3><code>model.predict(path, dim=None)</code></h3>
   <p>直接读取 PNG、JPG/JPEG、BMP、TIFF 或 WebP 并执行推理。灰度图按 HW 解释，彩色图转换为 RGB 并按 HWC 解释；彩色模型要求通道在前时传 <code>dim="CHW"</code>。解码应用 EXIF 方向，带 alpha 的图像去掉 alpha。不会自动缩放像素、改变尺寸、归一化或窗宽窗位处理。</p>
-  <pre data-language="python">from gray.sdk import load_model
+  <pre data-language="python">from gray_sdk import load_model
 
 model = load_model("models/my-model")  # 目录中包含 manifest.yaml
 try:
@@ -287,9 +287,9 @@ finally:
   <code>ImageInput</code> 列表并传入单项的 dim，例如 CHW 或 DHW。模型必须有 B/N 轴；动态批次需在
   Manifest 的相应 <code>input.shape</code> 位置使用 null。所有数组需满足模型 shape 和 dtype。</p>
   <p>图片解码与模型预处理分开配置。SDK 不猜测 RGB/BGR、不会默认除以 255，也不自动 resize、softmax、argmax、解码检测框或解释临床含义。类型转换和线性归一化只在 Manifest 显式配置 <code>input.preprocessing</code> 后执行。</p>
-  <p>CLI 命令为 <code>gray-sdk infer/info/speed</code>；<code>--input</code> 支持 NPY 数组和常见图片，批次数组用 <code>--dim NCHW</code> 等标注。推理结果写入新建目录的 <code>outputs.npz</code> 和 <code>metadata.json</code>。开发者运行 <code>python build_sdk.py</code> 生成 wheel。</p>
+  <p>CLI 命令为 <code>gray infer</code>、<code>gray info</code>、<code>gray speed</code>；<code>--input</code> 支持 NPY 数组和常见图片，批次数组用 <code>--dim NCHW</code> 等标注。推理结果写入新建目录的 <code>outputs.npz</code> 和 <code>metadata.json</code>。SDK 项目位于 Gray-main 同级的 gray_sdk 目录。</p>
   <p>错误类型：GraySDKError、ManifestError、InputError、BackendError、InferenceError、RuntimeClosedError。CLI 参数错误返回 2，模型/输入/推理失败返回 1。</p>
-  <p><a href="https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/docs/SDK.md">Complete SDK API, manifest, geometry and deployment reference</a></p>
+  <p><a href="https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/SDK.md">Complete SDK API, manifest, geometry and deployment reference</a></p>
   </div>
 </section>
     <section id="boundaries">

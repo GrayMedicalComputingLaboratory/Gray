@@ -1,10 +1,13 @@
 """CLI dispatcher for project-owned training, validation and analysis stages."""
+
 from __future__ import annotations
 
 import argparse
 import importlib
-from collections.abc import Mapping
-from typing import Any, Callable
+import sys
+from collections.abc import Callable, Mapping
+from importlib.metadata import entry_points
+from typing import Any
 
 from rich.console import Console
 from rich.panel import Panel
@@ -15,7 +18,9 @@ from gray.experiment import artifact_dir
 from gray.utils.io import write_json
 
 
-def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, Any]], Any]:
+def _load_entrypoint(
+    config: dict[str, Any], stage: str
+) -> Callable[[dict[str, Any]], Any]:
     """Import the project-owned callable configured for a workflow stage.
 
     Args:
@@ -48,7 +53,64 @@ def _load_entrypoint(config: dict[str, Any], stage: str) -> Callable[[dict[str, 
     return function
 
 
-def main(argv: list[str] | None = None) -> None:
+_WORKFLOW_COMMANDS = ("train", "validate", "analyze")
+_SDK_COMMANDS = {
+    "infer": "Run model inference",
+    "info": "Show model information",
+    "speed": "Measure model inference speed",
+    "inspect": "Validate a model manifest and ONNX session",
+    "benchmark": "Benchmark a model with custom run counts",
+}
+_COMMAND_GROUP = "gray.commands"
+
+
+def main(argv: list[str] | None = None) -> int | None:
+    """Run a Gray workflow, a built-in SDK command, or an installed SDK command."""
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    command = arguments[0] if arguments else ""
+    if command in _WORKFLOW_COMMANDS:
+        return _run_workflow(arguments)
+
+    extensions = entry_points(group=_COMMAND_GROUP)
+    parser = argparse.ArgumentParser(
+        prog="gray", description="Gray workflows and SDK commands."
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    for name in _WORKFLOW_COMMANDS:
+        commands.add_parser(name, help=f"Run the configured {name} stage")
+    for name, description in _SDK_COMMANDS.items():
+        commands.add_parser(name, help=description)
+    commands.add_parser("skin_inference", help="Analyze skin images (Skin AI SDK)")
+    for name in sorted(
+        {extension.name for extension in extensions}
+        - {
+            *_WORKFLOW_COMMANDS,
+            *_SDK_COMMANDS,
+            "skin_inference",
+        }
+    ):
+        commands.add_parser(name, help="Run an installed SDK command")
+
+    matches = [extension for extension in extensions if extension.name == command]
+    if len(matches) > 1:
+        parser.error(f"multiple installed SDKs register {command!r}")
+    if matches:
+        return matches[0].load()(arguments[1:])
+    if command in _SDK_COMMANDS:
+        parser.error(
+            "install the gray-sdk package in the same Python environment as gray"
+        )
+    if command == "skin_inference":
+        parser.error(
+            "install the gray-skin-ai SDK in the same Python environment as gray"
+        )
+    if command.startswith("-") and command not in ("-h", "--help"):
+        return _run_workflow(arguments)
+    parser.parse_args(arguments)
+    return None
+
+
+def _run_workflow(argv: list[str]) -> None:
     """Run a configured training, validation, or analysis stage.
 
     If the project entry point returns a dictionary, it is saved as
@@ -56,8 +118,7 @@ def main(argv: list[str] | None = None) -> None:
     printed.
 
     Args:
-        argv: Command-line arguments excluding the executable name. ``None``
-            reads arguments from :data:`sys.argv`.
+        argv: Command-line arguments excluding the executable name.
 
     Returns:
         None.
@@ -70,7 +131,7 @@ def main(argv: list[str] | None = None) -> None:
         TypeError: If the entry-point attribute is not callable.
     """
     parser = argparse.ArgumentParser(prog="gray")
-    parser.add_argument("command", choices=("train", "validate", "analyze"))
+    parser.add_argument("command", choices=_WORKFLOW_COMMANDS)
     parser.add_argument("--config", required=True)
     parser.add_argument("--override", action="append", default=[], metavar="KEY=VALUE")
     args = parser.parse_args(argv)
@@ -81,5 +142,14 @@ def main(argv: list[str] | None = None) -> None:
     if isinstance(result, dict):
         stage_dir = artifact_dir(config, stage, create=True)
         write_json(stage_dir / "summary.json", result)
-    Console().print(Panel(Pretty(result), title="[bold green]GRAY COMPLETE[/]", border_style="bright_blue"))
-if __name__ == "__main__": main()
+    Console().print(
+        Panel(
+            Pretty(result),
+            title="[bold green]GRAY COMPLETE[/]",
+            border_style="bright_blue",
+        )
+    )
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -3,8 +3,8 @@
 Gray is a shared foundation, not a repository for project-specific algorithms.
 Every source file has one owner and one responsibility.
 
-The independent `gray.sdk` layer owns local ONNX inference sessions, strict model
-manifests, decoded-array contracts and the `gray-sdk` CLI. It does not move
+The separately built `gray_sdk` package in the sibling `gray_sdk` project owns local ONNX inference sessions, strict model
+manifests, decoded-array contracts and the `gray` CLI. It does not move
 inference into Gray Core or change the project-owned training APIs. See
 [SDK API and contracts](SDK.md). `sdk/backend.py` owns engine integration;
 `manifest.py` owns schema validation; `types.py` owns input/output structures;

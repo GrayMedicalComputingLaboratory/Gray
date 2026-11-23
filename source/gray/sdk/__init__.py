@@ -1,29 +1,13 @@
-"""Independent Python inference SDK; ONNX Runtime is imported only on load."""
+"""Compatibility imports for the public API now distributed as gray-sdk."""
 
-from .exceptions import (
-    BackendError,
-    GraySDKError,
-    InferenceError,
-    InputError,
-    ManifestError,
-    RuntimeClosedError,
-)
-from .image import load_image
-from .manifest import ModelManifest
-from .runtime import GrayRuntime, load_model
-from .types import ImageInput, InferenceResult
+try:
+    import gray_sdk as _sdk
+except ModuleNotFoundError as error:
+    if error.name != "gray_sdk":
+        raise
+    raise ModuleNotFoundError(
+        "Install gray-sdk to use the Gray inference API.", name="gray_sdk"
+    ) from error
 
-__all__ = [
-    "BackendError",
-    "GrayRuntime",
-    "GraySDKError",
-    "ImageInput",
-    "InferenceError",
-    "InferenceResult",
-    "InputError",
-    "ManifestError",
-    "ModelManifest",
-    "RuntimeClosedError",
-    "load_image",
-    "load_model",
-]
+__all__ = _sdk.__all__
+globals().update({name: getattr(_sdk, name) for name in __all__})

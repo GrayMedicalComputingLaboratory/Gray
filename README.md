@@ -11,25 +11,7 @@
 
 # Gray 中文说明
 
-## Python 推理 SDK v1
-
-新增独立 `gray.sdk`，支持本地 ONNX CPU 推理、可选 CUDA、显式 2D/3D
-数组契约和 `gray-sdk infer/info/speed`，保留现有训练 API 与 `gray` 命令。
-
-```bash
-python -m pip install './source/gray[sdk]'
-python examples/sdk/run_inference.py
-gray-sdk infer --model examples/sdk/model --input examples/sdk/input/sample.npy
-```
-
-`--model` 是模型文件夹，`--input` 支持 `.npy`、PNG、JPG、BMP、TIFF 和 WebP 图片。用 `gray-sdk speed` 测速，
-用 `gray-sdk info --model examples/sdk/model` 查看信息。
-Python 直接使用 `from gray.sdk import load_model`。
-开发者打包只需 `python build_sdk.py`，安装包生成在 `dist/sdk/`。
-
-以上命令从仓库根目录执行。完整安装、Manifest、医学影像输入、CPU/GPU、
-离线交付和错误处理见 [SDK 文档](../../docs/SDK.md)，
-真实测试及交付限制见 [验证记录](../../docs/SDK_VALIDATION.md)。
+推理 SDK 位于同级的 [`gray_sdk`](https://github.com/GrayMedicalComputingLaboratory/gray_sdk) 项目。
 
 Gray 是 Gray Medical Computing Laboratory 的轻量、可复用训练研究基础框架。
 它提供配置身份、可复现性、产物路径、生命周期调度和扩展契约；模型、数据集、指标、增强、损失和推理仍由具体项目负责。
@@ -44,19 +26,19 @@ Gray 是 Gray Medical Computing Laboratory 的轻量、可复用训练研究基�
 
 ```bash
 python -m pip install --upgrade \
-  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
 ```
 
 本地开发安装：
 
 ```bash
-python -m pip install -e /path/to/Gray/source/gray
+python -m pip install -e /path/to/Gray-main
 ```
 
 启用 ClearML 实验管理：
 
 ```bash
-python -m pip install -e "/path/to/Gray/source/gray[train]"
+python -m pip install -e "/path/to/Gray-main[train]"
 ```
 
 最小训练示例见 [`examples/main.py`](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/examples/main.py)，完成 `clearml-init` 后运行：
@@ -162,9 +144,9 @@ Gray 不规定通用图像 CSV、模型基类、loss、Web UI、推理服务、3
 
 # English README
 
-The independent `gray.sdk` adds local ONNX CPU/optional CUDA inference and a
-separate `gray-sdk` CLI. Existing training APIs remain supported. See the
-[SDK reference](../../docs/SDK.md) and [synthetic demo](../../examples/sdk/README.md).
+The independent `gray_sdk` adds local ONNX CPU/optional CUDA inference through
+the `gray` CLI. Existing training APIs remain supported. See the
+[SDK documentation](https://github.com/GrayMedicalComputingLaboratory/gray_sdk).
 
 Gray is a small, reusable training-research foundation for Gray Medical Computing Laboratory.
 It provides configuration identity, reproducibility, artifact paths, lifecycle dispatching and extension contracts. Models, datasets, metrics, augmentation, losses and inference remain owned by each project.
@@ -179,19 +161,19 @@ It provides configuration identity, reproducibility, artifact paths, lifecycle d
 
 ```bash
 python -m pip install --upgrade \
-  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main#subdirectory=source/gray"
+  "gray @ git+ssh://git@github.com/GrayMedicalComputingLaboratory/Gray.git@main"
 ```
 
 For local development:
 
 ```bash
-python -m pip install -e /path/to/Gray/source/gray
+python -m pip install -e /path/to/Gray-main
 ```
 
 Enable ClearML experiment management:
 
 ```bash
-python -m pip install -e "/path/to/Gray/source/gray[train]"
+python -m pip install -e "/path/to/Gray-main[train]"
 ```
 
 See [`examples/main.py`](https://github.com/GrayMedicalComputingLaboratory/Gray/blob/main/examples/main.py) for a minimal training run. After
