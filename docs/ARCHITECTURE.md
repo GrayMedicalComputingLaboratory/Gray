@@ -6,7 +6,7 @@ Every source file has one owner and one responsibility.
 The separately built `gray_sdk` package in the sibling `gray_sdk` project owns local ONNX inference sessions, strict model
 manifests, decoded-array contracts and the `gray` CLI. It does not move
 inference into Gray Core or change the project-owned training APIs. See
-[SDK API and contracts](SDK.md). `sdk/backend.py` owns engine integration;
+[SDK API and contracts](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/ONNX.md). `sdk/backend.py` owns engine integration;
 `manifest.py` owns schema validation; `types.py` owns input/output structures;
 `preprocess.py` owns explicit tensor preparation; `runtime.py` owns lifecycle and
 provenance; `cli.py` owns command IO; `exceptions.py` owns SDK error categories.

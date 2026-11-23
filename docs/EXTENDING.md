@@ -5,7 +5,7 @@ Keep an implementation in its project until two independent projects share the s
 ## Independent inference SDK
 
 `gray_sdk` provides model lifecycle and generic tensor contracts outside Core.
-See [SDK reference](SDK.md). Future backend adapters implement the small
+See [SDK reference](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/ONNX.md). Future backend adapters implement the small
 `sdk.backend.Backend` protocol (run/close/version/providers) and must be wired
 explicitly into runtime dispatch with provider and error tests. Task-specific
 pre/postprocessing and DICOM Series policy remain project-owned. New manifest

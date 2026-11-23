@@ -289,7 +289,7 @@ finally:
   <p>图片解码与模型预处理分开配置。SDK 不猜测 RGB/BGR、不会默认除以 255，也不自动 resize、softmax、argmax、解码检测框或解释临床含义。类型转换和线性归一化只在 Manifest 显式配置 <code>input.preprocessing</code> 后执行。</p>
   <p>CLI 命令为 <code>gray infer</code>、<code>gray info</code>、<code>gray speed</code>；<code>--input</code> 支持 NPY 数组和常见图片，批次数组用 <code>--dim NCHW</code> 等标注。推理结果写入新建目录的 <code>outputs.npz</code> 和 <code>metadata.json</code>。SDK 项目位于 Gray-main 同级的 gray_sdk 目录。</p>
   <p>错误类型：GraySDKError、ManifestError、InputError、BackendError、InferenceError、RuntimeClosedError。CLI 参数错误返回 2，模型/输入/推理失败返回 1。</p>
-  <p><a href="https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/SDK.md">Complete SDK API, manifest, geometry and deployment reference</a></p>
+  <p><a href="https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/ONNX.md">Complete SDK API, manifest, geometry and deployment reference</a></p>
   </div>
 </section>
     <section id="boundaries">

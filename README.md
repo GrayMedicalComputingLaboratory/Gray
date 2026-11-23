@@ -146,7 +146,7 @@ Gray 不规定通用图像 CSV、模型基类、loss、Web UI、推理服务、3
 
 The independent `gray_sdk` adds local ONNX CPU/optional CUDA inference through
 the `gray` CLI. Existing training APIs remain supported. See the
-[SDK documentation](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/SDK.md).
+[ONNX SDK documentation](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/ONNX.md).
 
 Gray is a small, reusable training-research foundation for Gray Medical Computing Laboratory.
 It provides configuration identity, reproducibility, artifact paths, lifecycle dispatching and extension contracts. Models, datasets, metrics, augmentation, losses and inference remain owned by each project.

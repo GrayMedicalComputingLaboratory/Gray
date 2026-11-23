@@ -2,7 +2,7 @@
 
 Gray is a commercial framework baseline, not a production medical-device release.
 
-The optional [Python inference SDK](SDK.md) adds offline local ONNX execution as
+The optional [Python inference SDK](https://github.com/GrayMedicalComputingLaboratory/gray_sdk/blob/main/docs/ONNX.md) adds offline local ONNX execution as
 a separate layer. Model selection, clinical interpretation and task validation
 remain customer-owned. SDK execution does not create experiment logs or save
 input images. Its CLI persists only requested predictions and execution metadata.

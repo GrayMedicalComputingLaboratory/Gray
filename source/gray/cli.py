@@ -65,7 +65,7 @@ _COMMAND_GROUP = "gray.commands"
 
 
 def main(argv: list[str] | None = None) -> int | None:
-    """Run a Gray workflow, a built-in SDK command, or an installed SDK command."""
+    """Run a Gray workflow or an installed SDK command."""
     arguments = list(sys.argv[1:] if argv is None else argv)
     command = arguments[0] if arguments else ""
     if command in _WORKFLOW_COMMANDS:
@@ -78,18 +78,15 @@ def main(argv: list[str] | None = None) -> int | None:
     commands = parser.add_subparsers(dest="command", required=True)
     for name in _WORKFLOW_COMMANDS:
         commands.add_parser(name, help=f"Run the configured {name} stage")
-    for name, description in _SDK_COMMANDS.items():
+    installed = {extension.name for extension in extensions}
+    installed.difference_update(_WORKFLOW_COMMANDS)
+    for name in sorted(installed):
+        description = (
+            "Analyze skin images (Skin AI SDK)"
+            if name == "skin_inference"
+            else _SDK_COMMANDS.get(name, "Run an installed SDK command")
+        )
         commands.add_parser(name, help=description)
-    commands.add_parser("skin_inference", help="Analyze skin images (Skin AI SDK)")
-    for name in sorted(
-        {extension.name for extension in extensions}
-        - {
-            *_WORKFLOW_COMMANDS,
-            *_SDK_COMMANDS,
-            "skin_inference",
-        }
-    ):
-        commands.add_parser(name, help="Run an installed SDK command")
 
     matches = [extension for extension in extensions if extension.name == command]
     if len(matches) > 1:
