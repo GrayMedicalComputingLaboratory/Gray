@@ -80,10 +80,12 @@ def main(argv: list[str] | None = None) -> int | None:
         commands.add_parser(name, help=f"Run the configured {name} stage")
     installed = {extension.name for extension in extensions}
     installed.difference_update(_WORKFLOW_COMMANDS)
+    if "skin" in installed:
+        installed.discard("skin_inference")
     for name in sorted(installed):
         description = (
             "Analyze skin images (Skin AI SDK)"
-            if name == "skin_inference"
+            if name in {"skin", "skin_inference"}
             else _SDK_COMMANDS.get(name, "Run an installed SDK command")
         )
         commands.add_parser(name, help=description)
@@ -97,7 +99,7 @@ def main(argv: list[str] | None = None) -> int | None:
         parser.error(
             "install the gray-sdk package in the same Python environment as gray"
         )
-    if command == "skin_inference":
+    if command in {"skin", "skin_inference"}:
         parser.error(
             "install the gray-skin-ai SDK in the same Python environment as gray"
         )
